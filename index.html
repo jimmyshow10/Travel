@@ -48,6 +48,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 .btn-s{background:var(--cream-2);color:var(--brown);margin-top:8px}
 .btn:disabled{opacity:0.45;pointer-events:none}
 
+/* LIBRARY */
 .search-wrap{margin:12px 16px 0;position:relative}
 .search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);width:16px;height:16px;}
 .search-wrap input{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:10px 13px 10px 36px;font-family:'Inter',sans-serif;font-size:14px;color:var(--brown);outline:none;-webkit-appearance:none;appearance:none;}
@@ -77,8 +78,8 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 .upload-area.has-file{border-color:var(--rose);border-style:solid}
 .upload-area input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
 .upload-icon{font-size:28px;margin-bottom:8px}
-.upload-label{font-size:14px;font-weight:600;color:var(--brown-2);margin-bottom:3px}
-.upload-sub{font-size:12px;color:var(--muted);line-height:1.5}
+.upload-label{font-size:14px;font-weight:600;color:var(--brown-2);margin-bottom:4px}
+.upload-sub{font-size:12px;color:var(--muted);line-height:1.6}
 .upload-filename{font-size:13px;font-weight:600;color:var(--rose);margin-top:4px}
 .or-row{display:flex;align-items:center;gap:10px;margin-bottom:14px}
 .or-row::before,.or-row::after{content:'';flex:1;height:1px;background:var(--border)}
@@ -93,22 +94,14 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 .load-bar-wrap{margin:16px 0 0;background:var(--cream-2);border-radius:4px;height:4px;overflow:hidden;}
 .load-bar{height:100%;background:var(--rose);border-radius:4px;transition:width 0.4s ease;width:0%}
 
-/* PREVIEW -- multi-place */
+/* MULTI-PLACE PREVIEW */
 .preview-header{padding:14px 16px 8px;display:flex;align-items:center;justify-content:space-between;}
 .preview-header p{font-size:13px;color:var(--muted)}
 .preview-header strong{color:var(--brown)}
-.place-card{
-  background:var(--card);border:1.5px solid var(--border);border-radius:12px;
-  padding:12px 14px;margin:0 16px 8px;display:flex;align-items:center;gap:12px;
-  cursor:pointer;transition:all 0.15s;
-}
+.place-card{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;margin:0 16px 8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.15s;}
 .place-card.selected{border-color:var(--rose)}
 .place-card.deselected{opacity:0.38}
-.place-check{
-  width:24px;height:24px;border-radius:50%;border:2px solid var(--border);
-  display:flex;align-items:center;justify-content:center;font-size:13px;
-  flex-shrink:0;transition:all 0.15s;color:transparent;
-}
+.place-check{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:all 0.15s;color:transparent;}
 .place-card.selected .place-check{background:var(--rose);border-color:var(--rose);color:white}
 .place-em{font-size:22px;flex-shrink:0}
 .place-details{flex:1;min-width:0}
@@ -116,10 +109,15 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 .place-loc{font-size:12px;color:var(--muted);margin-top:2px}
 .result-btns{padding:12px 16px 20px;display:flex;flex-direction:column;gap:8px}
 
-/* PLAN */
+/* PLAN SCREEN */
 #screen-plan{padding-bottom:0}
+.plan-summary{flex-shrink:0;border-bottom:1px solid var(--border);background:var(--cream)}
+.dest-row{display:flex;gap:8px;padding:10px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.dest-row::-webkit-scrollbar{display:none}
+.dest-pill{flex-shrink:0;background:var(--card);border:1.5px solid var(--border);border-radius:20px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.dest-pill:active{background:var(--cream-2)}
 .chat-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px 8px;display:flex;flex-direction:column;gap:10px;}
-.msg{max-width:86%;padding:11px 13px;border-radius:16px;font-size:14px;line-height:1.55}
+.msg{max-width:88%;padding:11px 14px;border-radius:16px;font-size:14px;line-height:1.6}
 .msg-u{background:var(--rose);color:white;align-self:flex-end;border-bottom-right-radius:4px}
 .msg-a{background:var(--card);border:1px solid var(--border);color:var(--brown);align-self:flex-start;border-bottom-left-radius:4px;white-space:pre-wrap}
 .chat-bar{flex-shrink:0;padding:10px 14px;border-top:1px solid var(--border);background:var(--cream);display:flex;gap:9px;align-items:flex-end;padding-bottom:max(10px, env(safe-area-inset-bottom));}
@@ -128,10 +126,12 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 .send-btn{width:40px;height:40px;border-radius:50%;border:none;background:var(--rose);color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .send-btn:active{background:var(--rose-d)}
 
+/* SETTINGS */
 .settings-body{padding:0 16px 30px}
 .settings-section{margin-top:22px}
 .settings-section h3{font-family:'Playfair Display',serif;font-size:17px;margin-bottom:13px}
 
+/* SETUP */
 .setup-hero{flex-shrink:0;background:linear-gradient(150deg,#C27B74 0%,#C9924A 100%);padding:56px 24px 36px;text-align:center;}
 .setup-hero .plane{font-size:44px;margin-bottom:12px}
 .setup-hero h1{font-family:'Playfair Display',serif;font-size:34px;color:white;margin-bottom:6px}
@@ -140,6 +140,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 .setup-divider{font-family:'Playfair Display',serif;font-size:16px;margin:20px 0 14px;color:var(--brown);}
 .setup-divider span{display:block;font-size:12px;color:var(--muted);font-family:'Inter',sans-serif;margin-top:2px}
 
+/* MODAL */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.38);z-index:200;align-items:flex-end;}
 .modal-bg.open{display:flex}
 .modal{background:var(--cream);border-radius:22px 22px 0 0;width:100%;max-height:82vh;overflow-y:auto;padding:18px 20px 36px;}
@@ -178,7 +179,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
     <div class="field">
       <label>AssemblyAI API Key</label>
       <input type="password" id="s-aai" placeholder="Your AssemblyAI key" autocomplete="off">
-      <p class="helper">From assemblyai.com — used for TikToks where someone is talking. Free tier is enough.</p>
+      <p class="helper">From assemblyai.com — for videos where someone is talking. Free tier works fine.</p>
     </div>
     <div class="setup-divider">Firebase<span>Keeps the wishlist shared between both of you</span></div>
     <div class="field">
@@ -213,32 +214,33 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 <div id="screen-add" class="screen">
   <div class="hdr">
     <h1 class="serif">Save a Spot</h1>
-    <p>Upload a TikTok — video, slideshow, or screenshot</p>
+    <p>Video, multiple slideshow photos, or a screenshot</p>
   </div>
   <div class="scroll-body">
-
     <div id="add-form" class="add-body">
       <div class="step-lbl">Upload</div>
       <div class="upload-area" id="upload-area">
-        <input type="file" id="a-file" accept="video/*,image/*" onchange="fileSelected(this)">
+        <input type="file" id="a-file" accept="image/*,video/*" multiple onchange="fileSelected(this)">
         <div id="upload-placeholder">
           <div class="upload-icon">📱</div>
           <div class="upload-label">Tap to upload</div>
-          <div class="upload-sub">Video (someone talking or slideshow)<br>or Screenshot (text on screen)</div>
+          <div class="upload-sub">
+            Video with audio — we'll transcribe it<br>
+            Slideshow — select up to 10 photos at once<br>
+            Screenshot — reads the text on screen
+          </div>
         </div>
         <div id="upload-selected" style="display:none">
           <div class="upload-icon">✅</div>
-          <div class="upload-label">Ready to analyze</div>
+          <div class="upload-label" id="upload-label-text">Ready to analyze</div>
           <div class="upload-filename" id="upload-filename"></div>
         </div>
       </div>
-
       <div class="or-row"><span>or describe it manually</span></div>
       <div class="field">
         <label>Description (fallback only)</label>
         <textarea id="a-desc" placeholder="e.g. Rooftop restaurant in Rome with views of the Colosseum..."></textarea>
       </div>
-
       <div class="step-lbl" style="margin-top:4px">Optional</div>
       <div class="field">
         <label>TikTok URL</label>
@@ -263,7 +265,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 
     <div id="add-preview" style="display:none">
       <div class="preview-header">
-        <p>Found <strong id="found-count">0</strong> place(s) — tap to deselect any</p>
+        <p>Found <strong id="found-count">0</strong> place(s) — tap any to deselect</p>
       </div>
       <div id="places-list"></div>
       <div class="result-btns">
@@ -271,7 +273,6 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
         <button class="btn btn-s" onclick="resetAdd()">Try Again</button>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -279,13 +280,14 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 <div id="screen-plan" class="screen">
   <div class="hdr" style="flex-shrink:0">
     <h1 class="serif">Plan a Trip</h1>
-    <p>Tell me where you're going, I'll build the itinerary</p>
+    <p id="plan-sub">Browse what you've saved</p>
   </div>
-  <div class="chat-area" id="chat-area">
-    <div class="msg msg-a">Hey! Tell me where you're headed and how many days you have — I'll put together a day-by-day plan from your saved spots. Try: "We're going to Paris for 4 days"</div>
+  <div class="plan-summary" id="plan-summary" style="display:none">
+    <div class="dest-row" id="dest-row"></div>
   </div>
+  <div class="chat-area" id="chat-area"></div>
   <div class="chat-bar">
-    <textarea id="chat-in" placeholder="Where are you going?" rows="1" onkeydown="chatKey(event)" oninput="autoH(this)"></textarea>
+    <textarea id="chat-in" placeholder="Ask anything about your saved spots..." rows="1" onkeydown="chatKey(event)" oninput="autoH(this)"></textarea>
     <button class="send-btn" onclick="sendChat()">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </button>
@@ -340,18 +342,14 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
   </button>
 </nav>
 
-<!-- MODAL -->
+<!-- SPOT MODAL -->
 <div class="modal-bg" id="modal-bg" onclick="closeMod(event)">
-  <div class="modal">
-    <div class="modal-drag"></div>
-    <div id="modal-body"></div>
-  </div>
+  <div class="modal"><div class="modal-drag"></div><div id="modal-body"></div></div>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
 const EMOJIS={restaurant:'🍽️',cafe:'☕',bar:'🍸',hotel:'🏨',museum:'🏛️',attraction:'🎡',beach:'🏖️',market:'🛍️',nature:'🌿',viewpoint:'📍',shop:'🛍️',bakery:'🥐',winery:'🍷',default:'📍'};
-
 let cfg={},db=null,spots=[],pendingPlaces=[],activeFilter='all',chatHist=[];
 
 function ls(k,v){if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}
@@ -365,8 +363,7 @@ function init(){
 
 function initFB(){
   try{
-    if(!firebase.apps.length)
-      firebase.initializeApp({apiKey:cfg.fbk,authDomain:`${cfg.fbp}.firebaseapp.com`,projectId:cfg.fbp});
+    if(!firebase.apps.length)firebase.initializeApp({apiKey:cfg.fbk,authDomain:`${cfg.fbp}.firebaseapp.com`,projectId:cfg.fbp});
     db=firebase.firestore();
   }catch(e){console.error(e);toast('Firebase error — check Settings')}
 }
@@ -396,6 +393,7 @@ function go(id,btn){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   const nb=btn||document.getElementById('nb-'+id);if(nb)nb.classList.add('active');
   if(id==='library')document.getElementById('lib-sub').textContent=spots.length?`${spots.length} spot${spots.length!==1?'s':''} saved`:'Your saved travel spots';
+  if(id==='plan')initPlanScreen();
   if(id!=='add')resetAdd();
 }
 
@@ -403,13 +401,14 @@ async function loadSpots(){
   if(!db)return;
   try{
     const snap=await db.collection('tripsave_spots').orderBy('addedAt','desc').get();
-    spots=snap.docs.map(d=>({id:d.id,...d.data()}));renderSpots(spots);buildChips();
+    spots=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderSpots(spots);buildChips();
   }catch(e){console.error(e);toast('Could not load spots')}
 }
 
 function renderSpots(list){
   const el=document.getElementById('spots-list');
-  if(!list.length){el.innerHTML='<div class="empty"><div class="ei">🌍</div><h3>No spots yet</h3><p>Tap <strong>Save</strong> below to add your first place from TikTok.</p></div>';return}
+  if(!list.length){el.innerHTML='<div class="empty"><div class="ei">🌍</div><h3>No spots yet</h3><p>Tap <strong>Save</strong> below to add your first place.</p></div>';return}
   const grouped={};
   list.forEach(s=>{const k=s.country||'Other';if(!grouped[k])grouped[k]=[];grouped[k].push(s)});
   let h='';
@@ -468,14 +467,26 @@ async function delSpot(id){
 }
 
 // ============================================================
-// FILE HANDLING
+// FILE UPLOAD
 // ============================================================
 function fileSelected(input){
-  const file=input.files[0];if(!file)return;
+  const files=Array.from(input.files);if(!files.length)return;
+  const imgs=files.filter(f=>f.type.startsWith('image/'));
+  const vids=files.filter(f=>f.type.startsWith('video/'));
   document.getElementById('upload-placeholder').style.display='none';
   document.getElementById('upload-selected').style.display='block';
-  document.getElementById('upload-filename').textContent=file.name;
   document.getElementById('upload-area').classList.add('has-file');
+  if(imgs.length>1){
+    document.getElementById('upload-label-text').textContent=`${imgs.length} photos selected`;
+    document.getElementById('upload-filename').textContent='All photos will be scanned for locations';
+  }else if(vids.length){
+    const mb=(vids[0].size/1024/1024).toFixed(0);
+    document.getElementById('upload-label-text').textContent='Video ready';
+    document.getElementById('upload-filename').textContent=`${vids[0].name} (${mb} MB)`;
+  }else{
+    document.getElementById('upload-label-text').textContent='Ready to analyze';
+    document.getElementById('upload-filename').textContent=files[0].name;
+  }
   document.getElementById('a-desc').value='';
 }
 
@@ -483,272 +494,6 @@ function setLoading(main,step,pct){
   document.getElementById('load-main').textContent=main||'';
   document.getElementById('load-step').textContent=step||'';
   if(pct!==undefined)document.getElementById('load-bar').style.width=pct+'%';
-}
-
-// ============================================================
-// FRAME EXTRACTION (Canvas API — works entirely in browser)
-// ============================================================
-async function extractFrames(videoFile){
-  return new Promise((resolve,reject)=>{
-    const video=document.createElement('video');
-    video.playsInline=true;
-    video.muted=true;
-    video.preload='auto';
-    const url=URL.createObjectURL(videoFile);
-    video.src=url;
-
-    video.addEventListener('error',()=>{URL.revokeObjectURL(url);reject(new Error('Video load error'))});
-
-    video.addEventListener('loadedmetadata',async()=>{
-      const duration=video.duration;
-      if(!duration||duration===Infinity){URL.revokeObjectURL(url);resolve([]);return}
-
-      // Sample up to 16 frames evenly across the video
-      const maxFrames=Math.min(16,Math.max(1,Math.floor(duration/1.5)));
-      const interval=duration/(maxFrames+1);
-      const canvas=document.createElement('canvas');
-      // Use a compact size — readable for text, small for API
-      canvas.width=360;canvas.height=640;
-      const ctx=canvas.getContext('2d');
-      const frames=[];
-
-      for(let i=1;i<=maxFrames;i++){
-        try{
-          await seekVideo(video,interval*i);
-          ctx.drawImage(video,0,0,canvas.width,canvas.height);
-          const b64=canvas.toDataURL('image/jpeg',0.65).split(',')[1];
-          frames.push(b64);
-          setLoading('Scanning video frames...',`Frame ${i} of ${maxFrames}`,10+(i/maxFrames*40));
-        }catch(e){/* skip bad frame */}
-      }
-
-      URL.revokeObjectURL(url);
-      resolve(frames);
-    });
-  });
-}
-
-function seekVideo(video,time){
-  return new Promise((resolve,reject)=>{
-    const timeout=setTimeout(()=>resolve(),3000);// don't hang forever
-    video.addEventListener('seeked',()=>{clearTimeout(timeout);setTimeout(resolve,80)},{once:true});
-    video.currentTime=time;
-  });
-}
-
-// ============================================================
-// ASSEMBLYAI TRANSCRIPTION
-// ============================================================
-async function transcribeVideo(videoFile){
-  setLoading('Transcribing audio...','Uploading to AssemblyAI',55);
-  const uploadResp=await fetch('https://api.assemblyai.com/v2/upload',{
-    method:'POST',
-    headers:{'authorization':cfg.aai,'content-type':'application/octet-stream'},
-    body:videoFile
-  });
-  if(!uploadResp.ok)throw new Error('Audio upload failed');
-  const {upload_url}=await uploadResp.json();
-
-  const txResp=await fetch('https://api.assemblyai.com/v2/transcript',{
-    method:'POST',
-    headers:{'authorization':cfg.aai,'content-type':'application/json'},
-    body:JSON.stringify({audio_url:upload_url})
-  });
-  if(!txResp.ok)throw new Error('Transcript request failed');
-  const {id}=await txResp.json();
-
-  setLoading('Transcribing audio...','This takes 30-60 seconds',65);
-  for(let i=0;i<90;i++){
-    await sleep(2000);
-    const poll=await fetch(`https://api.assemblyai.com/v2/transcript/${id}`,{headers:{'authorization':cfg.aai}});
-    const d=await poll.json();
-    if(d.status==='completed')return d.text||'';
-    if(d.status==='error')throw new Error(d.error||'Transcription error');
-  }
-  throw new Error('Transcription timed out');
-}
-
-// ============================================================
-// CLAUDE API
-// ============================================================
-async function callClaude(messages,system,useSearch){
-  const headers={'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'};
-  if(cfg.ant)headers['x-api-key']=cfg.ant;
-  const body={model:'claude-sonnet-4-6',max_tokens:2000,messages};
-  if(system)body.system=system;
-  if(useSearch)body.tools=[{type:'web_search_20250305',name:'web_search'}];
-  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers,body:JSON.stringify(body)});
-  if(!r.ok)throw new Error(`API error ${r.status}`);
-  return r.json();
-}
-
-// ============================================================
-// MAIN PROCESS FUNCTION
-// ============================================================
-async function processSpot(){
-  const file=document.getElementById('a-file').files[0];
-  const desc=document.getElementById('a-desc').value.trim();
-  const url=document.getElementById('a-url').value.trim();
-  const note=document.getElementById('a-note').value.trim();
-
-  if(!file&&!desc){toast('Upload a file or describe the spot');return}
-
-  document.getElementById('add-form').style.display='none';
-  document.getElementById('add-loading').style.display='block';
-  setLoading('Starting analysis...','',5);
-
-  const isImage=file&&file.type.startsWith('image/');
-  const isVideo=file&&file.type.startsWith('video/');
-
-  let frames=[];
-  let transcript='';
-
-  try{
-    // --- IMAGES: just encode the single image ---
-    if(isImage){
-      setLoading('Reading image...','',30);
-      const b64=await fileToBase64(file);
-      frames=[b64];
-    }
-
-    // --- VIDEOS: extract frames + optionally transcribe ---
-    if(isVideo){
-      setLoading('Scanning video frames...','Extracting visual content',10);
-      frames=await extractFrames(file);
-
-      // Transcribe only if AssemblyAI key exists
-      if(cfg.aai){
-        try{
-          transcript=await transcribeVideo(file);
-        }catch(e){
-          console.warn('Transcription failed, continuing with frames only:',e.message);
-        }
-      }
-    }
-
-    setLoading('Finding spots...','Claude is analyzing the content',78);
-
-    // Build Claude message content
-    const contentBlocks=[];
-
-    // Add image frames
-    const mediaType=isImage?(file.type||'image/jpeg'):'image/jpeg';
-    frames.forEach(f=>{
-      contentBlocks.push({type:'image',source:{type:'base64',media_type:mediaType,data:f}});
-    });
-
-    // Build prompt text
-    let promptText='You are a travel research assistant. ';
-    if(frames.length>1){
-      promptText+=`These are ${frames.length} frames extracted from a TikTok video at different timestamps. Look at ALL frames and identify EVERY distinct travel spot shown — this could be a single place or a slideshow of 10+ places. `;
-    }else if(frames.length===1){
-      promptText+='This is a screenshot or image from a TikTok about a travel spot. Identify the place shown. ';
-    }
-    if(transcript){
-      promptText+=`\n\nAudio transcript from the video: "${transcript}"\n\n`;
-    }
-    if(desc){
-      promptText+=`\n\nAdditional context: ${desc}\n\n`;
-    }
-    promptText+=`For each place you can identify (from text overlays, spoken content, location tags, or visual recognition), return a JSON array. Use web search to find additional details like address, hours, and price range.
-
-Return ONLY a valid JSON array, nothing else:
-[
-  {"name":"exact place name","city":"city","country":"country","category":"restaurant|cafe|bar|hotel|museum|attraction|beach|market|nature|viewpoint|shop|bakery|winery","description":"1-2 sentences about what makes it special","address":"street address or null","hours":"opening hours or null","priceRange":"$ or $$ or $$$ or $$$$ or null"},
-  ...
-]
-
-If you find multiple places, include all of them. Do not include duplicates. If you cannot identify any specific place, return an empty array [].`;
-
-    contentBlocks.push({type:'text',text:promptText});
-
-    // If no visual content, use text-only message
-    const messages=contentBlocks.length>1||frames.length>0
-      ?[{role:'user',content:contentBlocks}]
-      :[{role:'user',content:promptText}];
-
-    const data=await callClaude(messages,null,true);
-    setLoading('Almost done...','',92);
-
-    const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
-    const match=text.match(/\[[\s\S]*\]/);
-    if(!match)throw new Error('No JSON array found');
-
-    let places=JSON.parse(match[0]);
-    if(!Array.isArray(places)||places.length===0)throw new Error('No places found');
-
-    // Attach shared metadata
-    places=places.map(p=>({...p,sourceUrl:url,notes:note}));
-    pendingPlaces=places;
-
-    document.getElementById('add-loading').style.display='none';
-    renderPlacePreviews(places);
-    document.getElementById('add-preview').style.display='block';
-
-  }catch(e){
-    console.error(e);
-    document.getElementById('add-loading').style.display='none';
-    document.getElementById('add-form').style.display='block';
-    toast(e.message.includes('No places')
-      ?'No places found — try a different frame or describe it manually'
-      :'Something went wrong — try again');
-  }
-}
-
-// ============================================================
-// MULTI-PLACE PREVIEW
-// ============================================================
-function renderPlacePreviews(places){
-  document.getElementById('found-count').textContent=places.length;
-  let h='';
-  places.forEach((p,i)=>{
-    const em=EMOJIS[p.category]||EMOJIS.default;
-    h+=`<div class="place-card selected" data-idx="${i}" onclick="togglePlace(this)">
-      <div class="place-check">✓</div>
-      <div class="place-em">${em}</div>
-      <div class="place-details">
-        <div class="place-name">${esc(p.name)}</div>
-        <div class="place-loc">${esc(p.city||'')}${p.city&&p.country?', ':''}${esc(p.country||'')}</div>
-      </div>
-    </div>`;
-  });
-  document.getElementById('places-list').innerHTML=h;
-  updateSaveBtn();
-}
-
-function togglePlace(el){
-  el.classList.toggle('selected');
-  el.classList.toggle('deselected');
-  updateSaveBtn();
-}
-
-function updateSaveBtn(){
-  const selected=document.querySelectorAll('.place-card.selected').length;
-  const btn=document.getElementById('save-btn');
-  btn.textContent=selected===pendingPlaces.length?'Save All':`Save ${selected} Spot${selected!==1?'s':''}`;
-  btn.disabled=selected===0;
-}
-
-async function saveSelected(){
-  if(!db)return;
-  const selected=[...document.querySelectorAll('.place-card.selected')].map(el=>pendingPlaces[+el.dataset.idx]);
-  if(!selected.length)return;
-
-  document.getElementById('save-btn').disabled=true;
-  document.getElementById('save-btn').textContent='Saving...';
-
-  try{
-    await Promise.all(selected.map(p=>
-      db.collection('tripsave_spots').add({...p,addedAt:firebase.firestore.FieldValue.serverTimestamp(),addedBy:cfg.name||'Unknown'})
-    ));
-    await loadSpots();
-    resetAdd();go('library');
-    toast(`${selected.length} spot${selected.length!==1?'s':''} saved!`);
-  }catch(e){
-    document.getElementById('save-btn').disabled=false;
-    updateSaveBtn();
-    toast('Error saving — check Firebase config');
-  }
 }
 
 function fileToBase64(file){
@@ -760,6 +505,219 @@ function fileToBase64(file){
   });
 }
 
+// ============================================================
+// FRAME EXTRACTION — scene change detection
+// ============================================================
+async function extractFrames(videoFile){
+  return new Promise((resolve,reject)=>{
+    const video=document.createElement('video');
+    video.playsInline=true;video.muted=true;video.preload='auto';
+    const url=URL.createObjectURL(videoFile);
+    video.src=url;
+    video.addEventListener('error',()=>{URL.revokeObjectURL(url);reject(new Error('Could not read video'))});
+    video.addEventListener('loadedmetadata',async()=>{
+      const duration=video.duration;
+      if(!duration||duration===Infinity){URL.revokeObjectURL(url);resolve([]);return}
+      const canvas=document.createElement('canvas');
+      canvas.width=360;canvas.height=640;
+      const ctx=canvas.getContext('2d');
+      const cmp=document.createElement('canvas');cmp.width=32;cmp.height=32;
+      const cmpCtx=cmp.getContext('2d');
+      const INTERVAL=1.5,MAX=30,THRESHOLD=18;
+      const frames=[];let lastPx=null;
+      const total=Math.floor(duration/INTERVAL);
+      for(let i=0;i<total&&frames.length<MAX;i++){
+        try{
+          await seekVideo(video,i*INTERVAL);
+          cmpCtx.drawImage(video,0,0,32,32);
+          const px=cmpCtx.getImageData(0,0,32,32).data;
+          if(!lastPx||avgDiff(px,lastPx)>THRESHOLD){
+            ctx.drawImage(video,0,0,360,640);
+            frames.push(canvas.toDataURL('image/jpeg',0.65).split(',')[1]);
+            lastPx=px;
+            setLoading('Scanning video...',`${frames.length} unique scene${frames.length!==1?'s':''} found`,10+(Math.min(frames.length,MAX)/MAX*35));
+          }
+        }catch(e){}
+      }
+      URL.revokeObjectURL(url);resolve(frames);
+    });
+  });
+}
+
+function seekVideo(video,time){
+  return new Promise(resolve=>{
+    const t=setTimeout(resolve,3000);
+    video.addEventListener('seeked',()=>{clearTimeout(t);setTimeout(resolve,80)},{once:true});
+    video.currentTime=time;
+  });
+}
+
+function avgDiff(a,b){
+  let t=0;for(let i=0;i<a.length;i+=4)t+=Math.abs(a[i]-b[i])+Math.abs(a[i+1]-b[i+1])+Math.abs(a[i+2]-b[i+2]);
+  return t/(a.length/4*3);
+}
+
+// ============================================================
+// ASSEMBLYAI
+// ============================================================
+async function transcribeVideo(file){
+  setLoading('Transcribing audio...','Uploading to AssemblyAI',52);
+  const up=await fetch('https://api.assemblyai.com/v2/upload',{method:'POST',headers:{'authorization':cfg.aai,'content-type':'application/octet-stream'},body:file});
+  if(!up.ok)throw new Error('Upload failed');
+  const {upload_url}=await up.json();
+  const tx=await fetch('https://api.assemblyai.com/v2/transcript',{method:'POST',headers:{'authorization':cfg.aai,'content-type':'application/json'},body:JSON.stringify({audio_url:upload_url})});
+  if(!tx.ok)throw new Error('Transcript request failed');
+  const {id}=await tx.json();
+  setLoading('Transcribing audio...','Usually takes 30 to 60 seconds',62);
+  for(let i=0;i<90;i++){
+    await sleep(2000);
+    const r=await fetch(`https://api.assemblyai.com/v2/transcript/${id}`,{headers:{'authorization':cfg.aai}});
+    const d=await r.json();
+    if(d.status==='completed')return d.text||'';
+    if(d.status==='error')throw new Error(d.error||'Transcription failed');
+  }
+  throw new Error('Timed out');
+}
+
+// ============================================================
+// CLAUDE API
+// ============================================================
+async function callClaude(messages,system,useSearch,maxTokens){
+  const headers={'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'};
+  if(cfg.ant)headers['x-api-key']=cfg.ant;
+  const body={model:'claude-sonnet-4-6',max_tokens:maxTokens||1500,messages};
+  if(system)body.system=system;
+  if(useSearch)body.tools=[{type:'web_search_20250305',name:'web_search'}];
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers,body:JSON.stringify(body)});
+  if(!r.ok)throw new Error(`API error ${r.status}`);
+  return r.json();
+}
+
+// ============================================================
+// PROCESS SPOT
+// ============================================================
+async function processSpot(){
+  const files=Array.from(document.getElementById('a-file').files);
+  const desc=document.getElementById('a-desc').value.trim();
+  const url=document.getElementById('a-url').value.trim();
+  const note=document.getElementById('a-note').value.trim();
+  if(!files.length&&!desc){toast('Upload a file or describe the spot');return}
+
+  document.getElementById('add-form').style.display='none';
+  document.getElementById('add-loading').style.display='block';
+  setLoading('Starting...','',5);
+
+  const imageFiles=files.filter(f=>f.type.startsWith('image/'));
+  const videoFile=files.find(f=>f.type.startsWith('video/'));
+  let frames=[];let transcript='';
+
+  try{
+    // MULTIPLE IMAGES (slideshow)
+    if(imageFiles.length>1){
+      setLoading('Reading photos...','Preparing all images',15);
+      frames=await Promise.all(imageFiles.slice(0,10).map(fileToBase64));
+      setLoading('Reading photos...',`${frames.length} photos ready`,40);
+    }
+    // SINGLE IMAGE
+    else if(imageFiles.length===1){
+      setLoading('Reading image...','',25);
+      frames=[await fileToBase64(imageFiles[0])];
+    }
+    // VIDEO
+    else if(videoFile){
+      const mb=videoFile.size/1024/1024;
+      // Extract frames regardless of size
+      setLoading('Scanning video...','Extracting frames',8);
+      frames=await extractFrames(videoFile);
+      // Only try AssemblyAI if key exists and file isn't too large
+      if(cfg.aai&&mb<150){
+        try{
+          transcript=await transcribeVideo(videoFile);
+        }catch(e){
+          console.warn('Transcription skipped:',e.message);
+          // Continue with frames only — not a fatal error
+        }
+      }else if(mb>=150){
+        setLoading('Large video detected','Using visual scanning only — transcription skipped for large files',70);
+        await sleep(1500);
+      }
+    }
+
+    setLoading('Finding spots...','Claude is identifying locations',78);
+
+    // Build content blocks for Claude
+    const blocks=[];
+    const imgType=imageFiles.length?imageFiles[0].type||'image/jpeg':'image/jpeg';
+    frames.forEach(f=>blocks.push({type:'image',source:{type:'base64',media_type:imgType,data:f}}));
+
+    let prompt='You are a travel research assistant. ';
+    if(frames.length>1)prompt+=`These are ${frames.length} frames/photos from a TikTok travel post. Look at ALL of them and identify EVERY distinct travel spot — this could be one place or many. `;
+    else if(frames.length===1)prompt+='This is an image from a TikTok travel post. Identify the place shown. ';
+    if(transcript)prompt+=`\n\nAudio transcript: "${transcript}"\n`;
+    if(desc)prompt+=`\nAdditional context: ${desc}\n`;
+    prompt+=`\nFor every place you can identify, use web search to find details. Return ONLY a valid JSON array, nothing else:\n[{"name":"place name","city":"city","country":"country","category":"restaurant|cafe|bar|hotel|museum|attraction|beach|market|nature|viewpoint|shop|bakery|winery","description":"1-2 sentences on what makes it special","address":null,"hours":null,"priceRange":null}]\nInclude all places found. No duplicates. If none found, return [].`;
+
+    blocks.push({type:'text',text:prompt});
+    const msgs=frames.length?[{role:'user',content:blocks}]:[{role:'user',content:prompt}];
+
+    const data=await callClaude(msgs,null,true,2000);
+    setLoading('Almost done...','',93);
+    const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    const match=text.match(/\[[\s\S]*\]/);
+    if(!match)throw new Error('No places identified');
+    let places=JSON.parse(match[0]);
+    if(!Array.isArray(places)||!places.length)throw new Error('No places identified');
+    places=places.map(p=>({...p,sourceUrl:url,notes:note}));
+    pendingPlaces=places;
+
+    document.getElementById('add-loading').style.display='none';
+    renderPlacePreviews(places);
+    document.getElementById('add-preview').style.display='block';
+
+  }catch(e){
+    console.error(e);
+    document.getElementById('add-loading').style.display='none';
+    document.getElementById('add-form').style.display='block';
+    const msg=e.message.includes('No places')
+      ?'No places found — try a clearer image or describe it manually'
+      :e.message.includes('timed out')||e.message.includes('failed')
+      ?'Upload timed out — try a shorter clip or describe the spot manually'
+      :'Something went wrong — try again';
+    toast(msg);
+  }
+}
+
+function renderPlacePreviews(places){
+  document.getElementById('found-count').textContent=places.length;
+  document.getElementById('places-list').innerHTML=places.map((p,i)=>{
+    const em=EMOJIS[p.category]||EMOJIS.default;
+    return`<div class="place-card selected" data-idx="${i}" onclick="togglePlace(this)"><div class="place-check">✓</div><div class="place-em">${em}</div><div class="place-details"><div class="place-name">${esc(p.name)}</div><div class="place-loc">${esc(p.city||'')}${p.city&&p.country?', ':''}${esc(p.country||'')}</div></div></div>`;
+  }).join('');
+  updateSaveBtn();
+}
+
+function togglePlace(el){el.classList.toggle('selected');el.classList.toggle('deselected');updateSaveBtn()}
+
+function updateSaveBtn(){
+  const n=document.querySelectorAll('.place-card.selected').length;
+  const btn=document.getElementById('save-btn');
+  btn.textContent=n===pendingPlaces.length?'Save All':`Save ${n} Spot${n!==1?'s':''}`;
+  btn.disabled=n===0;
+}
+
+async function saveSelected(){
+  if(!db)return;
+  const sel=[...document.querySelectorAll('.place-card.selected')].map(el=>pendingPlaces[+el.dataset.idx]);
+  if(!sel.length)return;
+  document.getElementById('save-btn').disabled=true;
+  document.getElementById('save-btn').textContent='Saving...';
+  try{
+    await Promise.all(sel.map(p=>db.collection('tripsave_spots').add({...p,addedAt:firebase.firestore.FieldValue.serverTimestamp(),addedBy:cfg.name||'Unknown'})));
+    await loadSpots();resetAdd();go('library');
+    toast(`${sel.length} spot${sel.length!==1?'s':''} saved!`);
+  }catch(e){document.getElementById('save-btn').disabled=false;updateSaveBtn();toast('Error saving — check Firebase config')}
+}
+
 function resetAdd(){
   pendingPlaces=[];
   const fi=document.getElementById('a-file');if(fi)fi.value='';
@@ -767,14 +725,72 @@ function resetAdd(){
   document.getElementById('upload-placeholder').style.display='block';
   document.getElementById('upload-selected').style.display='none';
   document.getElementById('upload-area').classList.remove('has-file');
-  const f=document.getElementById('add-form');const l=document.getElementById('add-loading');const p=document.getElementById('add-preview');
-  if(f)f.style.display='block';if(l)l.style.display='none';if(p)p.style.display='none';
+  ['add-form','add-loading','add-preview'].forEach((id,i)=>{
+    const el=document.getElementById(id);if(el)el.style.display=i===0?'block':'none';
+  });
   document.getElementById('places-list').innerHTML='';
 }
 
 // ============================================================
-// PLAN / CHAT
+// PLAN SCREEN — shows summary first, then chat
 // ============================================================
+function initPlanScreen(){
+  const ca=document.getElementById('chat-area');
+  ca.innerHTML='';
+  chatHist=[];
+
+  if(!spots.length){
+    addMsg("You haven't saved any spots yet. Head to the Save tab to start adding places from TikTok, then come back here to plan your trip.",'a');
+    document.getElementById('plan-summary').style.display='none';
+    return;
+  }
+
+  // Build destination summary pills
+  const countries=[...new Set(spots.map(s=>s.country).filter(Boolean))].sort();
+  const destRow=document.getElementById('dest-row');
+  destRow.innerHTML=countries.map(c=>{
+    const count=spots.filter(s=>s.country===c).length;
+    return`<div class="dest-pill" onclick="askAbout('${esc(c)}')">${c} (${count})</div>`;
+  }).join('');
+  document.getElementById('plan-summary').style.display='block';
+
+  // Build a natural overview message
+  const byCountry={};
+  spots.forEach(s=>{const k=s.country||'Other';if(!byCountry[k])byCountry[k]=[];byCountry[k].push(s)});
+  let overview=`Here's everything you've saved so far:\n\n`;
+  Object.entries(byCountry).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([country,ss])=>{
+    const byType={};
+    ss.forEach(s=>{const t=s.category||'other';if(!byType[t])byType[t]=0;byType[t]++});
+    const breakdown=Object.entries(byType).map(([t,n])=>`${n} ${t}${n>1?'s':''}`).join(', ');
+    overview+=`${country} — ${ss.length} spot${ss.length>1?'s':''} (${breakdown})\n`;
+    ss.forEach(s=>overview+=`  • ${s.name}${s.city?' in '+s.city:''}\n`);
+    overview+='\n';
+  });
+  overview+=`Tap a destination above to explore it, or just ask me anything — like "what did I save in Italy?" or "build me a 3-day Rome itinerary."`;
+
+  addMsg(overview.trim(),'a');
+}
+
+function askAbout(country){
+  const inp=document.getElementById('chat-in');
+  inp.value=`Tell me about everything I saved in ${country}`;
+  sendChat();
+}
+
+// ============================================================
+// CHAT — strips markdown so it reads cleanly
+// ============================================================
+function cleanMarkdown(text){
+  return text
+    .replace(/#{1,4}\s*/g,'')
+    .replace(/\*\*(.+?)\*\*/g,'$1')
+    .replace(/\*(.+?)\*/g,'$1')
+    .replace(/^---+\s*/gm,'')
+    .replace(/^\s*[-–]\s+/gm,'• ')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+
 function chatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat()}}
 function autoH(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px'}
 
@@ -784,17 +800,30 @@ async function sendChat(){
   inp.value='';inp.style.height='auto';
   addMsg(msg,'u');chatHist.push({role:'user',content:msg});
   const tid='tmp-'+Date.now();addMsg('...','a',tid);
+
   const ctx=spots.length
     ?'Saved wishlist:\n'+spots.map(s=>`- ${s.name} (${s.city||'?'}, ${s.country||'?'}) [${s.category||'spot'}]${s.description?' — '+s.description:''}${s.hours?' Hours: '+s.hours:''}${s.notes?' Note: '+s.notes:''}`).join('\n')
-    :'No saved spots yet.';
-  const sys=`You are TripSave's planning assistant helping a couple plan trips from their saved wishlist.\n\n${ctx}\n\nWhen asked about a destination, pull matching spots and build a clear day-by-day itinerary with times. Flag spots needing reservations. If no spots exist for that destination, say so and suggest saving some first.`;
+    :'No saved spots.';
+
+  const sys=`You are TripSave, a friendly travel planning assistant helping a couple plan trips based on their saved wishlist.
+
+${ctx}
+
+How to respond:
+- Write in plain conversational text. No markdown. No asterisks. No ## headers. No --- dividers.
+- Use line breaks and bullet points with the • character to organize information clearly.
+- When asked what is saved somewhere, list the spots clearly by name, type, and a short note.
+- Only build a full day-by-day itinerary if the user specifically asks for one.
+- If they ask about a destination with no saved spots, say so and suggest adding some.
+- Be warm, like a well-traveled friend helping them plan something exciting.`;
+
   try{
-    const data=await callClaude(chatHist,sys,false);
+    const data=await callClaude(chatHist,sys,false,1500);
     const reply=data.content.find(b=>b.type==='text')?.text||'Something went wrong.';
     chatHist.push({role:'assistant',content:reply});
     const el=document.getElementById(tid);
-    if(el){el.textContent=reply;el.removeAttribute('id')}
-    const ca=document.getElementById('chat-area');ca.scrollTop=ca.scrollHeight;
+    if(el){el.textContent=cleanMarkdown(reply);el.removeAttribute('id')}
+    document.getElementById('chat-area').scrollTop=document.getElementById('chat-area').scrollHeight;
   }catch(e){
     const el=document.getElementById(tid);if(el)el.textContent='Something went wrong. Try again.';
   }
@@ -802,8 +831,11 @@ async function sendChat(){
 
 function addMsg(text,role,id){
   const ca=document.getElementById('chat-area');
-  const d=document.createElement('div');d.className=`msg msg-${role}`;d.textContent=text;
-  if(id)d.id=id;ca.appendChild(d);ca.scrollTop=ca.scrollHeight;
+  const d=document.createElement('div');
+  d.className=`msg msg-${role}`;
+  d.textContent=role==='a'?cleanMarkdown(text):text;
+  if(id)d.id=id;
+  ca.appendChild(d);ca.scrollTop=ca.scrollHeight;
 }
 
 // ============================================================
@@ -814,7 +846,6 @@ function populateSettings(){
   document.getElementById('st-aai').value=cfg.aai;document.getElementById('st-fbk').value=cfg.fbk;
   document.getElementById('st-fbp').value=cfg.fbp;
 }
-
 function saveSettings(){
   const n=document.getElementById('st-name').value.trim();const a=document.getElementById('st-ant').value.trim();
   const ai=document.getElementById('st-aai').value.trim();const fk=document.getElementById('st-fbk').value.trim();
@@ -822,21 +853,17 @@ function saveSettings(){
   ls('ts_name',n);ls('ts_ant',a);ls('ts_aai',ai);ls('ts_fbk',fk);ls('ts_fbp',fp);
   cfg={name:n,ant:a,aai:ai,fbk:fk,fbp:fp};toast('Settings saved');
 }
-
 function clearData(){
   if(confirm('Sign out and clear settings? Shared spots stay in Firebase.')){localStorage.clear();location.reload()}
 }
-
 function toast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2800);
 }
-
 function esc(s){
   if(!s)return'';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
 init();
 </script>
 </body>
