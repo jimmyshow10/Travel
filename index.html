@@ -107,6 +107,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 .place-details{flex:1;min-width:0}
 .place-name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .place-loc{font-size:12px;color:var(--muted);margin-top:2px}
+.dup-badge{display:inline-block;font-size:10px;font-weight:600;color:var(--muted);background:var(--cream-2);border-radius:4px;padding:1px 6px;margin-top:3px;letter-spacing:0.03em;}
 .result-btns{padding:12px 16px 20px;display:flex;flex-direction:column;gap:8px}
 
 /* PLAN SCREEN */
@@ -265,7 +266,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 
     <div id="add-preview" style="display:none">
       <div class="preview-header">
-        <p>Found <strong id="found-count">0</strong> place(s) — tap any to deselect</p>
+        <p id="preview-header-msg">Found places — tap any to deselect</p>
       </div>
       <div id="places-list"></div>
       <div class="result-btns">
@@ -687,11 +688,26 @@ async function processSpot(){
   }
 }
 
+function normalize(s){return(s||'').toLowerCase().replace(/[^a-z0-9]/g,'').trim()}
+
+function isDuplicate(place){
+  const name=normalize(place.name);
+  const city=normalize(place.city);
+  return spots.some(s=>normalize(s.name)===name&&normalize(s.city)===city);
+}
+
 function renderPlacePreviews(places){
-  document.getElementById('found-count').textContent=places.length;
+  const dupes=places.filter(p=>isDuplicate(p)).length;
+  const newCount=places.length-dupes;
+  let headerText=`Found ${places.length} place${places.length!==1?'s':''}`;
+  if(dupes>0)headerText+=` — ${dupes} already in your wishlist and deselected`;
+  document.getElementById('preview-header-msg').textContent=headerText;
   document.getElementById('places-list').innerHTML=places.map((p,i)=>{
     const em=EMOJIS[p.category]||EMOJIS.default;
-    return`<div class="place-card selected" data-idx="${i}" onclick="togglePlace(this)"><div class="place-check">✓</div><div class="place-em">${em}</div><div class="place-details"><div class="place-name">${esc(p.name)}</div><div class="place-loc">${esc(p.city||'')}${p.city&&p.country?', ':''}${esc(p.country||'')}</div></div></div>`;
+    const dup=isDuplicate(p);
+    const cls=dup?'place-card deselected':'place-card selected';
+    const badge=dup?'<div class="dup-badge">Already saved</div>':'';
+    return`<div class="${cls}" data-idx="${i}" onclick="togglePlace(this)"><div class="place-check">✓</div><div class="place-em">${em}</div><div class="place-details"><div class="place-name">${esc(p.name)}</div><div class="place-loc">${esc(p.city||'')}${p.city&&p.country?', ':''}${esc(p.country||'')}</div>${badge}</div></div>`;
   }).join('');
   updateSaveBtn();
 }
