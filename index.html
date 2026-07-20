@@ -161,7 +161,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 </head>
 <body>
 
-<div class="version-badge">v1</div>
+<div class="version-badge">v2</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
@@ -701,7 +701,7 @@ async function processSpot(){
 
     // Build content blocks for Claude
     const blocks=[];
-    const imgType=imageFiles.length?imageFiles[0].type||'image/jpeg':'image/jpeg';
+    const imgType='image/jpeg'; // resizeImage always re-encodes to JPEG, so this must match regardless of original file type
     frames.forEach(f=>blocks.push({type:'image',source:{type:'base64',media_type:imgType,data:f}}));
 
     let prompt='You are a travel research assistant. ';
