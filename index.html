@@ -161,7 +161,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 </head>
 <body>
 
-<div class="version-badge">v2</div>
+<div class="version-badge">v3</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
@@ -502,7 +502,7 @@ function setLoading(main,step,pct){
 
 // Resize image using Canvas before sending to Claude
 // Phone screenshots can be 3MB+ — this brings them down to ~50-100KB each
-function resizeImage(file, maxWidth=540){
+function resizeImage(file, maxWidth=900){
   return new Promise(resolve=>{
     const img=new Image();
     const url=URL.createObjectURL(file);
@@ -514,7 +514,7 @@ function resizeImage(file, maxWidth=540){
       canvas.width=w;canvas.height=h;
       canvas.getContext('2d').drawImage(img,0,0,w,h);
       URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL('image/jpeg',0.72).split(',')[1]);
+      resolve(canvas.toDataURL('image/jpeg',0.85).split(',')[1]);
     };
     img.onerror=()=>{URL.revokeObjectURL(url);resolve(null)};
     img.src=url;
@@ -706,7 +706,7 @@ async function processSpot(){
 
     let prompt='You are a travel research assistant. ';
     if(frames.length>1)prompt+=`These are ${frames.length} frames/photos from a TikTok travel post. Look at ALL of them and identify EVERY distinct travel spot — this could be one place or many. `;
-    else if(frames.length===1)prompt+='This is an image from a TikTok travel post. Identify the place shown. ';
+    else if(frames.length===1)prompt+='This is an image from a TikTok travel post — it may be a photo of a place, or a screenshot containing a written list/caption of multiple places (e.g. "1. Temple Bar, 2. Love Lane..."). Read any visible text carefully and identify every place named, not just what\'s shown in a photo. ';
     if(transcript)prompt+=`\n\nAudio transcript: "${transcript}"\n`;
     if(desc)prompt+=`\nAdditional context: ${desc}\n`;
     prompt+=`\nFor every place you can identify, use web search to find details. Return ONLY a valid JSON array, nothing else:\n[{"name":"place name","city":"city","country":"country","category":"restaurant|cafe|bar|hotel|museum|attraction|beach|market|nature|viewpoint|shop|bakery|winery","description":"1-2 sentences on what makes it special","address":null,"hours":null,"priceRange":null}]\nInclude all places found. No duplicates. If none found, return [].`;
