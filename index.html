@@ -161,7 +161,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 </head>
 <body>
 
-<div class="version-badge">v5</div>
+<div class="version-badge">v6</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
@@ -760,12 +760,12 @@ async function processSpot(){
     else if(frames.length===1)prompt+='This is an image from a TikTok travel post — it may be a photo of a place, or a screenshot containing a written list/caption of multiple places (e.g. "1. Temple Bar, 2. Love Lane..."). Read any visible text carefully and identify every place named, not just what\'s shown in a photo. ';
     if(transcript)prompt+=`\n\nAudio transcript: "${transcript}"\n`;
     if(desc)prompt+=`\nAdditional context: ${desc}\n`;
-    prompt+=`\nFor each place, use web search only if you need to fill in missing details (city, country, category) — if a place is a well-known landmark you can confidently identify already, you don't need to search it individually. Prioritize completing the full list over exhaustive research per item. Return ONLY a valid JSON array, nothing else:\n[{"name":"place name","city":"city","country":"country","category":"restaurant|cafe|bar|hotel|museum|attraction|beach|market|nature|viewpoint|shop|bakery|winery","description":"1-2 sentences on what makes it special","address":null,"hours":null,"priceRange":null}]\nInclude all places found. No duplicates. If none found, return [].`;
+    prompt+=`\nUse your own knowledge to fill in city, country, and category — you don't need web search for well-known places. Prioritize completing the full list over exhaustive research per item. Return ONLY a valid JSON array, nothing else:\n[{"name":"place name","city":"city","country":"country","category":"restaurant|cafe|bar|hotel|museum|attraction|beach|market|nature|viewpoint|shop|bakery|winery","description":"1-2 sentences on what makes it special","address":null,"hours":null,"priceRange":null}]\nInclude all places found. No duplicates. If none found, return [].`;
 
     blocks.push({type:'text',text:prompt});
     const msgs=frames.length?[{role:'user',content:blocks}]:[{role:'user',content:prompt}];
 
-    const data=await callClaude(msgs,null,true,4096);
+    const data=await callClaude(msgs,null,false,4096);
     setLoading('Almost done...','',93);
     const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
     const match=text.match(/\[[\s\S]*\]/);
