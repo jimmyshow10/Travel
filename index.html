@@ -156,9 +156,12 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--brown);color:white;padding:11px 20px;border-radius:20px;font-size:14px;z-index:300;opacity:0;transition:opacity 0.25s;pointer-events:none;max-width:290px;text-align:center;}
 .toast.show{opacity:1}
+.version-badge{position:fixed;top:6px;right:10px;font-size:10px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:2px 7px;z-index:400;font-family:'Inter',sans-serif;pointer-events:none;}
 </style>
 </head>
 <body>
+
+<div class="version-badge">v1</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
