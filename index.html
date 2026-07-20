@@ -161,7 +161,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 </head>
 <body>
 
-<div class="version-badge">v3</div>
+<div class="version-badge">v5</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
@@ -302,6 +302,12 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 <div id="screen-settings" class="screen">
   <div class="hdr"><h1 class="serif">Settings</h1></div>
   <div class="scroll-body settings-body">
+    <div class="settings-section">
+      <h3>API Usage (this device, since last reset)</h3>
+      <div id="usage-stats" style="font-size:13px"></div>
+      <p class="helper">Rough estimate only — check console.anthropic.com for real billing. Web search is the biggest driver: each place Claude looks up can cost a separate search.</p>
+      <button class="btn btn-s" style="margin-top:8px" onclick="resetUsage()">Reset Counter</button>
+    </div>
     <div class="settings-section">
       <h3>Profile</h3>
       <div class="field"><label>Your Name</label><input type="text" id="st-name"></div>
@@ -615,7 +621,52 @@ async function callClaude(messages,system,useSearch,maxTokens){
   if(useSearch)body.tools=[{type:'web_search_20250305',name:'web_search'}];
   const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers,body:JSON.stringify(body)});
   if(!r.ok)throw new Error(`API error ${r.status}`);
-  return r.json();
+  const json=await r.json();
+  trackUsage(json.usage);
+  return json;
+}
+
+// ============================================================
+// USAGE TRACKING (rough local estimate — check your Anthropic console for actual billing)
+// ============================================================
+function trackUsage(usage){
+  if(!usage)return;
+  let u;
+  try{u=JSON.parse(localStorage.getItem('tripsave_usage')||'{}')}catch(e){u={}}
+  u.inputTokens=(u.inputTokens||0)+(usage.input_tokens||0);
+  u.outputTokens=(u.outputTokens||0)+(usage.output_tokens||0);
+  u.cacheReadTokens=(u.cacheReadTokens||0)+(usage.cache_read_input_tokens||0);
+  const searches=usage.server_tool_use?.web_search_requests||0;
+  u.searches=(u.searches||0)+searches;
+  u.calls=(u.calls||0)+1;
+  localStorage.setItem('tripsave_usage',JSON.stringify(u));
+}
+function estimateCost(u){
+  if(!u)return 0;
+  // Sonnet pricing approx: $3/M input, $15/M output. Web search: $10/1000 searches.
+  const inCost=(u.inputTokens||0)/1e6*3;
+  const outCost=(u.outputTokens||0)/1e6*15;
+  const searchCost=(u.searches||0)/1000*10;
+  return inCost+outCost+searchCost;
+}
+function renderUsage(){
+  let u;
+  try{u=JSON.parse(localStorage.getItem('tripsave_usage')||'{}')}catch(e){u={}}
+  const el=document.getElementById('usage-stats');
+  if(!el)return;
+  const cost=estimateCost(u);
+  el.innerHTML=`
+    <div class="modal-row"><span>API calls</span><span>${u.calls||0}</span></div>
+    <div class="modal-row"><span>Web searches</span><span>${u.searches||0}</span></div>
+    <div class="modal-row"><span>Input tokens</span><span>${(u.inputTokens||0).toLocaleString()}</span></div>
+    <div class="modal-row"><span>Output tokens</span><span>${(u.outputTokens||0).toLocaleString()}</span></div>
+    <div class="modal-row" style="font-weight:600;margin-top:6px"><span>Est. cost</span><span>~$${cost.toFixed(2)}</span></div>
+  `;
+}
+function resetUsage(){
+  localStorage.removeItem('tripsave_usage');
+  renderUsage();
+  toast('Usage counter reset');
 }
 
 // ============================================================
@@ -654,7 +705,7 @@ async function processSpot(){
         const blocks=batch.map(f=>({type:'image',source:{type:'base64',media_type:'image/jpeg',data:f}}));
         blocks.push({type:'text',text:`These are screenshots from TikTok travel posts. Identify every distinct travel spot shown across all images. Return ONLY a valid JSON array:\n[{"name":"place name","city":"city","country":"country","category":"restaurant|cafe|bar|hotel|museum|attraction|beach|market|nature|viewpoint|shop|bakery|winery","description":"1-2 sentences on what makes it special","address":null,"hours":null,"priceRange":null}]\nInclude all places. No duplicates. If none found, return [].`});
         try{
-          const d=await callClaude([{role:'user',content:blocks}],null,true,2000);
+          const d=await callClaude([{role:'user',content:blocks}],null,false,2000);
           const txt=d.content.filter(b=>b.type==='text').map(b=>b.text).join('');
           const m=txt.match(/\[[\s\S]*\]/);
           if(m){const p=JSON.parse(m[0]);if(Array.isArray(p))allPlaces=[...allPlaces,...p]}
@@ -709,12 +760,12 @@ async function processSpot(){
     else if(frames.length===1)prompt+='This is an image from a TikTok travel post — it may be a photo of a place, or a screenshot containing a written list/caption of multiple places (e.g. "1. Temple Bar, 2. Love Lane..."). Read any visible text carefully and identify every place named, not just what\'s shown in a photo. ';
     if(transcript)prompt+=`\n\nAudio transcript: "${transcript}"\n`;
     if(desc)prompt+=`\nAdditional context: ${desc}\n`;
-    prompt+=`\nFor every place you can identify, use web search to find details. Return ONLY a valid JSON array, nothing else:\n[{"name":"place name","city":"city","country":"country","category":"restaurant|cafe|bar|hotel|museum|attraction|beach|market|nature|viewpoint|shop|bakery|winery","description":"1-2 sentences on what makes it special","address":null,"hours":null,"priceRange":null}]\nInclude all places found. No duplicates. If none found, return [].`;
+    prompt+=`\nFor each place, use web search only if you need to fill in missing details (city, country, category) — if a place is a well-known landmark you can confidently identify already, you don't need to search it individually. Prioritize completing the full list over exhaustive research per item. Return ONLY a valid JSON array, nothing else:\n[{"name":"place name","city":"city","country":"country","category":"restaurant|cafe|bar|hotel|museum|attraction|beach|market|nature|viewpoint|shop|bakery|winery","description":"1-2 sentences on what makes it special","address":null,"hours":null,"priceRange":null}]\nInclude all places found. No duplicates. If none found, return [].`;
 
     blocks.push({type:'text',text:prompt});
     const msgs=frames.length?[{role:'user',content:blocks}]:[{role:'user',content:prompt}];
 
-    const data=await callClaude(msgs,null,true,2000);
+    const data=await callClaude(msgs,null,true,4096);
     setLoading('Almost done...','',93);
     const text=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
     const match=text.match(/\[[\s\S]*\]/);
@@ -912,6 +963,7 @@ function populateSettings(){
   document.getElementById('st-name').value=cfg.name;document.getElementById('st-ant').value=cfg.ant;
   document.getElementById('st-aai').value=cfg.aai;document.getElementById('st-fbk').value=cfg.fbk;
   document.getElementById('st-fbp').value=cfg.fbp;
+  renderUsage();
 }
 function saveSettings(){
   const n=document.getElementById('st-name').value.trim();const a=document.getElementById('st-ant').value.trim();
