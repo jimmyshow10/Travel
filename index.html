@@ -731,7 +731,7 @@ async function processSpot(){
     document.getElementById('add-form').style.display='block';
     const msg=e.message.includes('No places')
       ?'No places found — try a clearer image or describe it manually'
-      :'Something went wrong — try again or describe the spot manually';
+      :'Error: '+e.message;
     toast(msg);
   }
 }
