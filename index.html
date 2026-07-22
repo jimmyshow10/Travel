@@ -172,7 +172,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 </head>
 <body>
 
-<div class="version-badge">v15</div>
+<div class="version-badge">v16</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
@@ -1093,16 +1093,20 @@ function deleteCurrentItin(){
 // and which stop number within that day each mentioned spot falls at.
 function buildDayOrderedSpots(text){
   const lines=text.split('\n');
-  const dayHeaderRe=/^\s*(?:day\s*\d+|day\s*one|day\s*two|day\s*three|day\s*four|day\s*five|day\s*six|day\s*seven)\b.*$/i;
+  // Matches "Day 1", "Day One", OR a line starting with a weekday name (e.g. "Friday Afternoon and Evening", "Saturday, Full Day")
+  const dayHeaderRe=/^\s*(?:day\s*\d+\b|day\s*(?:one|two|three|four|five|six|seven)\b|(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b)/i;
+  let dayIndex=0;
   let currentDay='Day 1';
   const dayCounters={};
   const results=[];
   const usedSpotIds=new Set();
 
   lines.forEach(line=>{
-    if(dayHeaderRe.test(line.trim())){
-      const m=line.match(/day\s*\d+/i);
-      currentDay=m?m[0].replace(/\s+/g,' ').trim().replace(/^./,c=>c.toUpperCase()):line.trim();
+    const trimmed=line.trim();
+    // Header lines are never bullet items — skip bullets before testing
+    if(trimmed && !trimmed.startsWith('•') && !trimmed.startsWith('-') && dayHeaderRe.test(trimmed)){
+      dayIndex++;
+      currentDay=`Day ${dayIndex}`;
       return;
     }
     const lower=line.toLowerCase();
