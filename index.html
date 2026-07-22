@@ -172,7 +172,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 </head>
 <body>
 
-<div class="version-badge">v11</div>
+<div class="version-badge">v14</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
@@ -1068,44 +1068,59 @@ function closeItinView(){document.getElementById('itin-view-modal').style.displa
 
 // Turn saved spot names mentioned in the text into Google Maps search links,
 // so friends (or Wanderlog) can jump straight to the location.
-function enrichWithMapLinks(text){
-  let out=text;
-  spots.forEach(s=>{
-    if(!s.name)return;
-    const q=encodeURIComponent(s.name+(s.city?', '+s.city:''));
-    const link=`https://maps.google.com/?q=${q}`;
-    // Only link the first mention per spot per line-block, avoid re-linking inside a URL already
-    const escaped=s.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-    const re=new RegExp(`(^|[^/\\w])(${escaped})(?![^\\(]*\\))`, 'i');
-    if(re.test(out))out=out.replace(re,(m,pre,name)=>`${pre}${name} (${link})`);
-  });
-  return out;
-}
-
 function shareItinerary(){
   const modal=document.getElementById('itin-view-modal');
   const title=modal.dataset.title,content=modal.dataset.content;
   if(!content)return;
-  const body=enrichWithMapLinks(cleanMarkdown(content));
-  const full=`${title}\n\n${body}\n\n— Made with TripSave`;
+  const body=cleanMarkdown(content);
+  const full=`${title}\n\n${body}`;
   if(navigator.share){
     navigator.share({title,text:full}).catch(()=>{});
   }else{
-    navigator.clipboard.writeText(full).then(()=>toast('Copied — paste it anywhere, including Wanderlog\'s trip notes'));
+    navigator.clipboard.writeText(full).then(()=>toast('Copied to clipboard'));
   }
 }
 
-function copyItineraryPlain(){
-  const modal=document.getElementById('itin-view-modal');
-  const title=modal.dataset.title,content=modal.dataset.content;
-  if(!content)return;
-  const body=enrichWithMapLinks(cleanMarkdown(content));
-  navigator.clipboard.writeText(`${title}\n\n${body}`).then(()=>toast('Copied with map links'));
-}
 function deleteCurrentItin(){
   const id=document.getElementById('itin-view-modal').dataset.id;
   closeItinView();
   deleteItinerary(id);
+}
+
+// Find which saved spots are actually mentioned in this itinerary's text,
+// in the order they appear, so the export matches just this trip — not the whole wishlist.
+function matchSpotsInText(text){
+  const lower=text.toLowerCase();
+  const matched=spots
+    .map(s=>({spot:s,idx:s.name?lower.indexOf(s.name.toLowerCase()):-1}))
+    .filter(x=>x.idx!==-1)
+    .sort((a,b)=>a.idx-b.idx)
+    .map(x=>x.spot);
+  return matched;
+}
+
+function exportItineraryCSV(){
+  const modal=document.getElementById('itin-view-modal');
+  const title=modal.dataset.title,content=modal.dataset.content;
+  if(!content)return;
+  const matched=matchSpotsInText(content);
+  if(!matched.length){toast('No saved spots recognized in this itinerary — try exporting from the Library/Settings screen instead');return}
+
+  const headers=['Name','Location','City','Country','Category','Description','Hours','Price Range','Notes','Source URL'];
+  const rows=matched.map(s=>{
+    const location=s.address||[s.name,s.city,s.country].filter(Boolean).join(', ');
+    return[s.name,location,s.city,s.country,s.category,s.description,s.hours,s.priceRange,s.notes,s.sourceUrl]
+      .map(csvEscape).join(',');
+  });
+  const csv=[headers.join(','),...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`${(title||'itinerary').toLowerCase().replace(/[^a-z0-9]+/g,'-')}.csv`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast(`Exported ${matched.length} spot${matched.length!==1?'s':''} from "${title}"`);
 }
 function showItinList(){
   renderItineraries();
@@ -1194,9 +1209,11 @@ init();
   <div class="itin-modal">
     <div class="itin-modal-hdr"><h3 id="itin-view-title">Itinerary</h3><button onclick="closeItinView()" class="itin-x">✕</button></div>
     <div id="itin-view-body" class="itin-modal-body" style="white-space:pre-wrap"></div>
-    <div style="display:flex;gap:8px;margin:12px 16px">
-      <button class="btn btn-s" style="flex:1" onclick="shareItinerary()">📤 Share</button>
-      <button class="btn btn-s" style="flex:1" onclick="copyItineraryPlain()">📋 Copy w/ map links</button>
+    <div style="margin:12px 16px">
+      <button class="btn btn-s" style="width:100%" onclick="shareItinerary()">📤 Share</button>
+    </div>
+    <div style="margin:0 16px 12px">
+      <button class="btn btn-s" style="width:100%" onclick="exportItineraryCSV()">🗺️ Export to Google My Maps (.csv)</button>
     </div>
     <button class="btn btn-s" style="margin:12px 16px" onclick="deleteCurrentItin()">Delete this itinerary</button>
   </div>
