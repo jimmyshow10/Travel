@@ -172,7 +172,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 </head>
 <body>
 
-<div class="version-badge">v14</div>
+<div class="version-badge">v15</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
@@ -1089,27 +1089,52 @@ function deleteCurrentItin(){
 
 // Find which saved spots are actually mentioned in this itinerary's text,
 // in the order they appear, so the export matches just this trip — not the whole wishlist.
+// Walks the itinerary line by line, tracking which "Day N" section we're in
+// and which stop number within that day each mentioned spot falls at.
+function buildDayOrderedSpots(text){
+  const lines=text.split('\n');
+  const dayHeaderRe=/^\s*(?:day\s*\d+|day\s*one|day\s*two|day\s*three|day\s*four|day\s*five|day\s*six|day\s*seven)\b.*$/i;
+  let currentDay='Day 1';
+  const dayCounters={};
+  const results=[];
+  const usedSpotIds=new Set();
+
+  lines.forEach(line=>{
+    if(dayHeaderRe.test(line.trim())){
+      const m=line.match(/day\s*\d+/i);
+      currentDay=m?m[0].replace(/\s+/g,' ').trim().replace(/^./,c=>c.toUpperCase()):line.trim();
+      return;
+    }
+    const lower=line.toLowerCase();
+    spots.forEach(s=>{
+      if(!s.name||usedSpotIds.has(s.id))return;
+      if(lower.includes(s.name.toLowerCase())){
+        dayCounters[currentDay]=(dayCounters[currentDay]||0)+1;
+        results.push({spot:s,day:currentDay,order:dayCounters[currentDay]});
+        usedSpotIds.add(s.id);
+      }
+    });
+  });
+  return results;
+}
+
 function matchSpotsInText(text){
-  const lower=text.toLowerCase();
-  const matched=spots
-    .map(s=>({spot:s,idx:s.name?lower.indexOf(s.name.toLowerCase()):-1}))
-    .filter(x=>x.idx!==-1)
-    .sort((a,b)=>a.idx-b.idx)
-    .map(x=>x.spot);
-  return matched;
+  return buildDayOrderedSpots(text).map(r=>r.spot);
 }
 
 function exportItineraryCSV(){
   const modal=document.getElementById('itin-view-modal');
   const title=modal.dataset.title,content=modal.dataset.content;
   if(!content)return;
-  const matched=matchSpotsInText(content);
+  const clean=cleanMarkdown(content);
+  const matched=buildDayOrderedSpots(clean);
   if(!matched.length){toast('No saved spots recognized in this itinerary — try exporting from the Library/Settings screen instead');return}
 
-  const headers=['Name','Location','City','Country','Category','Description','Hours','Price Range','Notes','Source URL'];
-  const rows=matched.map(s=>{
+  const headers=['Name','Day','Location','City','Country','Category','Description','Hours','Price Range','Notes','Source URL'];
+  const rows=matched.map(({spot:s,day,order})=>{
     const location=s.address||[s.name,s.city,s.country].filter(Boolean).join(', ');
-    return[s.name,location,s.city,s.country,s.category,s.description,s.hours,s.priceRange,s.notes,s.sourceUrl]
+    const numberedName=`${order}. ${s.name}`;
+    return[numberedName,day,location,s.city,s.country,s.category,s.description,s.hours,s.priceRange,s.notes,s.sourceUrl]
       .map(csvEscape).join(',');
   });
   const csv=[headers.join(','),...rows].join('\n');
@@ -1120,7 +1145,7 @@ function exportItineraryCSV(){
   a.download=`${(title||'itinerary').toLowerCase().replace(/[^a-z0-9]+/g,'-')}.csv`;
   document.body.appendChild(a);a.click();document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  toast(`Exported ${matched.length} spot${matched.length!==1?'s':''} from "${title}"`);
+  toast(`Exported ${matched.length} spot${matched.length!==1?'s':''} — see below for how to color by day`);
 }
 function showItinList(){
   renderItineraries();
@@ -1214,6 +1239,7 @@ init();
     </div>
     <div style="margin:0 16px 12px">
       <button class="btn btn-s" style="width:100%" onclick="exportItineraryCSV()">🗺️ Export to Google My Maps (.csv)</button>
+      <p class="helper" style="margin-top:8px">Each stop is numbered by order within its day (e.g. "1. Breakfast Spot"). After importing: click the paint-bucket "Style" icon on the layer → "Style by data column" → choose <strong>Day</strong> → Google auto-colors each day differently.</p>
     </div>
     <button class="btn btn-s" style="margin:12px 16px" onclick="deleteCurrentItin()">Delete this itinerary</button>
   </div>
