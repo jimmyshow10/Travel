@@ -37,8 +37,8 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 
 .field{margin-bottom:14px}
 .field label{display:block;font-size:11px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
-.field input,.field textarea{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-family:'Inter',sans-serif;font-size:15px;color:var(--brown);outline:none;transition:border-color 0.2s;-webkit-appearance:none;appearance:none;}
-.field input:focus,.field textarea:focus{border-color:var(--rose)}
+.field input,.field textarea,.field select{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:11px 13px;font-family:'Inter',sans-serif;font-size:15px;color:var(--brown);outline:none;transition:border-color 0.2s;-webkit-appearance:none;appearance:none;}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--rose)}
 .field textarea{resize:none;min-height:78px;line-height:1.5}
 .helper{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.4}
 
@@ -172,7 +172,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 </head>
 <body>
 
-<div class="version-badge">v8</div>
+<div class="version-badge">v11</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
@@ -322,6 +322,14 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
       <div id="usage-stats" style="font-size:13px"></div>
       <p class="helper">Rough estimate only — check console.anthropic.com for real billing. Web search is the biggest driver: each place Claude looks up can cost a separate search.</p>
       <button class="btn btn-s" style="margin-top:8px" onclick="resetUsage()">Reset Counter</button>
+    </div>
+    <div class="settings-section">
+      <h3>Export</h3>
+      <p class="helper">Download your saved spots as a CSV — importable into Google My Maps (Import a file → CSV) to drop pins for every place at once. Also opens fine in Excel/Sheets.</p>
+      <div class="field"><label>Filter (optional)</label>
+        <select id="export-country-filter"></select>
+      </div>
+      <button class="btn btn-s" style="margin-top:8px" onclick="exportCSV()">⬇️ Export CSV</button>
     </div>
     <div class="settings-section">
       <h3>Profile</h3>
@@ -1011,40 +1019,89 @@ function addSaveBtn(el,rawContent){
 function saveItinerary(content){
   const title=prompt('Name this itinerary (e.g. "Rome 3-Day Plan"):','');
   if(title===null)return;
-  let list=[];
-  try{list=JSON.parse(ls('tripsave_itineraries')||'[]')}catch(e){}
-  list.unshift({id:'itin_'+Date.now(),title:title.trim()||'Untitled itinerary',content,savedAt:new Date().toISOString()});
-  ls('tripsave_itineraries',JSON.stringify(list));
-  toast('Saved to your itineraries');
+  if(!db){toast('Not connected — check Settings');return}
+  db.collection('tripsave_itineraries').add({
+    title:title.trim()||'Untitled itinerary',
+    content,
+    savedAt:firebase.firestore.FieldValue.serverTimestamp(),
+    savedBy:cfg.name||'Unknown'
+  }).then(()=>toast('Saved — visible on all your devices')).catch(e=>{console.error(e);toast('Could not save itinerary')});
 }
-function loadItineraries(){try{return JSON.parse(ls('tripsave_itineraries')||'[]')}catch(e){return[]}}
-function deleteItinerary(id){
-  let list=loadItineraries().filter(i=>i.id!==id);
-  ls('tripsave_itineraries',JSON.stringify(list));
-  renderItineraries();
-  toast('Deleted');
+async function loadItineraries(){
+  if(!db)return[];
+  try{
+    const snap=await db.collection('tripsave_itineraries').orderBy('savedAt','desc').get();
+    return snap.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(e){console.error(e);return[]}
 }
-function renderItineraries(){
-  const list=loadItineraries();
+async function deleteItinerary(id){
+  if(!db)return;
+  try{
+    await db.collection('tripsave_itineraries').doc(id).delete();
+    await renderItineraries();
+    toast('Deleted');
+  }catch(e){console.error(e);toast('Could not delete')}
+}
+async function renderItineraries(){
+  const list=await loadItineraries();
   const el=document.getElementById('itin-list');
   if(!el)return;
   if(!list.length){el.innerHTML='<p class="helper">No saved itineraries yet — tap "☆ Save this" under any chat reply to keep it here.</p>';return}
   el.innerHTML=list.map(i=>`
     <div class="itin-card" onclick="viewItinerary('${i.id}')">
       <div class="itin-card-title">${esc(i.title)}</div>
-      <div class="itin-card-date">${new Date(i.savedAt).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}</div>
+      <div class="itin-card-date">${i.savedAt?.toDate?i.savedAt.toDate().toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):''}${i.savedBy?' · '+esc(i.savedBy):''}</div>
     </div>
   `).join('');
 }
-function viewItinerary(id){
-  const item=loadItineraries().find(i=>i.id===id);
+async function viewItinerary(id){
+  const list=await loadItineraries();
+  const item=list.find(i=>i.id===id);
   if(!item)return;
   document.getElementById('itin-view-title').textContent=item.title;
   document.getElementById('itin-view-body').textContent=cleanMarkdown(item.content);
-  document.getElementById('itin-view-modal').style.display='flex';
-  document.getElementById('itin-view-modal').dataset.id=id;
+  const modal=document.getElementById('itin-view-modal');
+  modal.style.display='flex';
+  modal.dataset.id=id;modal.dataset.title=item.title;modal.dataset.content=item.content;
 }
 function closeItinView(){document.getElementById('itin-view-modal').style.display='none'}
+
+// Turn saved spot names mentioned in the text into Google Maps search links,
+// so friends (or Wanderlog) can jump straight to the location.
+function enrichWithMapLinks(text){
+  let out=text;
+  spots.forEach(s=>{
+    if(!s.name)return;
+    const q=encodeURIComponent(s.name+(s.city?', '+s.city:''));
+    const link=`https://maps.google.com/?q=${q}`;
+    // Only link the first mention per spot per line-block, avoid re-linking inside a URL already
+    const escaped=s.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    const re=new RegExp(`(^|[^/\\w])(${escaped})(?![^\\(]*\\))`, 'i');
+    if(re.test(out))out=out.replace(re,(m,pre,name)=>`${pre}${name} (${link})`);
+  });
+  return out;
+}
+
+function shareItinerary(){
+  const modal=document.getElementById('itin-view-modal');
+  const title=modal.dataset.title,content=modal.dataset.content;
+  if(!content)return;
+  const body=enrichWithMapLinks(cleanMarkdown(content));
+  const full=`${title}\n\n${body}\n\n— Made with TripSave`;
+  if(navigator.share){
+    navigator.share({title,text:full}).catch(()=>{});
+  }else{
+    navigator.clipboard.writeText(full).then(()=>toast('Copied — paste it anywhere, including Wanderlog\'s trip notes'));
+  }
+}
+
+function copyItineraryPlain(){
+  const modal=document.getElementById('itin-view-modal');
+  const title=modal.dataset.title,content=modal.dataset.content;
+  if(!content)return;
+  const body=enrichWithMapLinks(cleanMarkdown(content));
+  navigator.clipboard.writeText(`${title}\n\n${body}`).then(()=>toast('Copied with map links'));
+}
 function deleteCurrentItin(){
   const id=document.getElementById('itin-view-modal').dataset.id;
   closeItinView();
@@ -1064,6 +1121,47 @@ function populateSettings(){
   document.getElementById('st-aai').value=cfg.aai;document.getElementById('st-fbk').value=cfg.fbk;
   document.getElementById('st-fbp').value=cfg.fbp;
   renderUsage();
+  populateExportFilter();
+}
+
+function populateExportFilter(){
+  const sel=document.getElementById('export-country-filter');
+  if(!sel)return;
+  const countries=[...new Set(spots.map(s=>s.country).filter(Boolean))].sort();
+  sel.innerHTML='<option value="">All saved spots ('+spots.length+')</option>'+
+    countries.map(c=>`<option value="${esc(c)}">${esc(c)} only (${spots.filter(s=>s.country===c).length})</option>`).join('');
+}
+
+// ============================================================
+// CSV EXPORT — for Google My Maps "Import a file" (Name/Address/etc columns)
+// ============================================================
+function csvEscape(v){
+  if(v===null||v===undefined)return'';
+  const s=String(v);
+  return/[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s;
+}
+function exportCSV(){
+  if(!spots.length){toast('No saved spots to export yet');return}
+  const filter=document.getElementById('export-country-filter')?.value||'';
+  const list=filter?spots.filter(s=>s.country===filter):spots;
+  if(!list.length){toast('No spots match that filter');return}
+
+  // Google My Maps needs a location column: address if we have one, else "Name, City, Country" so it geocodes by place name.
+  const headers=['Name','Location','City','Country','Category','Description','Hours','Price Range','Notes','Source URL'];
+  const rows=list.map(s=>{
+    const location=s.address||[s.name,s.city,s.country].filter(Boolean).join(', ');
+    return[s.name,location,s.city,s.country,s.category,s.description,s.hours,s.priceRange,s.notes,s.sourceUrl]
+      .map(csvEscape).join(',');
+  });
+  const csv=[headers.join(','),...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`tripsave-export${filter?'-'+filter.toLowerCase().replace(/\s+/g,'-'):''}.csv`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast(`Exported ${list.length} spot${list.length!==1?'s':''} — import it into Google My Maps`);
 }
 function saveSettings(){
   const n=document.getElementById('st-name').value.trim();const a=document.getElementById('st-ant').value.trim();
@@ -1096,6 +1194,10 @@ init();
   <div class="itin-modal">
     <div class="itin-modal-hdr"><h3 id="itin-view-title">Itinerary</h3><button onclick="closeItinView()" class="itin-x">✕</button></div>
     <div id="itin-view-body" class="itin-modal-body" style="white-space:pre-wrap"></div>
+    <div style="display:flex;gap:8px;margin:12px 16px">
+      <button class="btn btn-s" style="flex:1" onclick="shareItinerary()">📤 Share</button>
+      <button class="btn btn-s" style="flex:1" onclick="copyItineraryPlain()">📋 Copy w/ map links</button>
+    </div>
     <button class="btn btn-s" style="margin:12px 16px" onclick="deleteCurrentItin()">Delete this itinerary</button>
   </div>
 </div>
