@@ -155,13 +155,24 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 .modal-link{display:block;text-align:center;color:var(--rose);font-size:14px;margin:12px 0;text-decoration:none;}
 
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--brown);color:white;padding:11px 20px;border-radius:20px;font-size:14px;z-index:300;opacity:0;transition:opacity 0.25s;pointer-events:none;max-width:290px;text-align:center;}
+.save-itin-btn{display:block;margin-top:8px;background:none;border:1px solid var(--border);border-radius:12px;padding:4px 10px;font-size:12px;color:var(--muted);cursor:pointer;}
+.save-itin-btn:hover{border-color:var(--brown);color:var(--brown)}
+.itin-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;display:flex;align-items:flex-end;}
+.itin-modal{background:var(--cream);width:100%;max-height:80vh;border-radius:20px 20px 0 0;overflow-y:auto;}
+.itin-modal-hdr{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--cream);}
+.itin-modal-hdr h3{font-size:17px;font-weight:600;color:var(--brown)}
+.itin-x{background:none;border:none;font-size:16px;color:var(--muted);cursor:pointer;padding:4px 8px;}
+.itin-modal-body{padding:16px;font-size:14px;line-height:1.5;color:var(--brown);}
+.itin-card{padding:12px 14px;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;cursor:pointer;background:var(--card);}
+.itin-card-title{font-weight:600;color:var(--brown);font-size:14px;}
+.itin-card-date{font-size:12px;color:var(--muted);margin-top:2px;}
 .toast.show{opacity:1}
 .version-badge{position:fixed;top:6px;right:10px;font-size:10px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:2px 7px;z-index:400;font-family:'Inter',sans-serif;pointer-events:none;}
 </style>
 </head>
 <body>
 
-<div class="version-badge">v6</div>
+<div class="version-badge">v8</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
@@ -285,6 +296,10 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
   <div class="hdr" style="flex-shrink:0">
     <h1 class="serif">Plan a Trip</h1>
     <p id="plan-sub">Browse what you've saved</p>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn-s" onclick="showItinList()">📖 Saved Itineraries</button>
+      <button class="btn-s" onclick="newChat()">+ New Chat</button>
+    </div>
   </div>
   <div class="plan-summary" id="plan-summary" style="display:none">
     <div class="dest-row" id="dest-row"></div>
@@ -714,7 +729,7 @@ async function processSpot(){
 
       // Deduplicate across batches
       const seen=new Set();
-      places=allPlaces.filter(p=>{const k=normalize(p.name)+normalize(p.city);if(seen.has(k))return false;seen.add(k);return true});
+      let places=allPlaces.filter(p=>{const k=normalize(p.name)+normalize(p.city);if(seen.has(k))return false;seen.add(k);return true});
       if(!places.length)throw new Error('No places identified');
       places=places.map(p=>({...p,sourceUrl:url,notes:note}));
       pendingPlaces=places;
@@ -854,10 +869,9 @@ function resetAdd(){
 // ============================================================
 function initPlanScreen(){
   const ca=document.getElementById('chat-area');
-  ca.innerHTML='';
-  chatHist=[];
 
   if(!spots.length){
+    ca.innerHTML='';chatHist=[];
     addMsg("You haven't saved any spots yet. Head to the Save tab to start adding places from TikTok, then come back here to plan your trip.",'a');
     document.getElementById('plan-summary').style.display='none';
     return;
@@ -871,6 +885,20 @@ function initPlanScreen(){
     return`<div class="dest-pill" onclick="askAbout('${esc(c)}')">${c} (${count})</div>`;
   }).join('');
   document.getElementById('plan-summary').style.display='block';
+
+  // Restore previous conversation if one exists, instead of wiping it every visit
+  const saved=loadChatHist();
+  if(saved.length){
+    chatHist=saved;
+    ca.innerHTML='';
+    chatHist.forEach(m=>{
+      const el=addMsg(m.content,m.role==='user'?'u':'a');
+      if(m.role==='assistant')addSaveBtn(el,m.content);
+    });
+    return;
+  }
+
+  chatHist=[];ca.innerHTML='';
 
   // Build a natural overview message
   const byCountry={};
@@ -887,6 +915,14 @@ function initPlanScreen(){
   overview+=`Tap a destination above to explore it, or just ask me anything — like "what did I save in Italy?" or "build me a 3-day Rome itinerary."`;
 
   addMsg(overview.trim(),'a');
+}
+
+function newChat(){
+  chatHist=[];
+  localStorage.removeItem('tripsave_chathist');
+  document.getElementById('chat-area').innerHTML='';
+  initPlanScreen();
+  toast('Started a new chat');
 }
 
 function askAbout(country){
@@ -916,7 +952,7 @@ async function sendChat(){
   const inp=document.getElementById('chat-in');
   const msg=inp.value.trim();if(!msg)return;
   inp.value='';inp.style.height='auto';
-  addMsg(msg,'u');chatHist.push({role:'user',content:msg});
+  addMsg(msg,'u');chatHist.push({role:'user',content:msg});saveChatHist();
   const tid='tmp-'+Date.now();addMsg('...','a',tid);
 
   const ctx=spots.length
@@ -939,13 +975,17 @@ How to respond:
     const data=await callClaude(chatHist,sys,false,1500);
     const reply=data.content.find(b=>b.type==='text')?.text||'Something went wrong.';
     chatHist.push({role:'assistant',content:reply});
+    saveChatHist();
     const el=document.getElementById(tid);
-    if(el){el.textContent=cleanMarkdown(reply);el.removeAttribute('id')}
+    if(el){el.textContent=cleanMarkdown(reply);el.removeAttribute('id');addSaveBtn(el,reply)}
     document.getElementById('chat-area').scrollTop=document.getElementById('chat-area').scrollHeight;
   }catch(e){
     const el=document.getElementById(tid);if(el)el.textContent='Something went wrong. Try again.';
   }
 }
+
+function saveChatHist(){ls('tripsave_chathist',JSON.stringify(chatHist))}
+function loadChatHist(){try{return JSON.parse(ls('tripsave_chathist')||'[]')}catch(e){return[]}}
 
 function addMsg(text,role,id){
   const ca=document.getElementById('chat-area');
@@ -954,7 +994,67 @@ function addMsg(text,role,id){
   d.textContent=role==='a'?cleanMarkdown(text):text;
   if(id)d.id=id;
   ca.appendChild(d);ca.scrollTop=ca.scrollHeight;
+  return d;
 }
+
+// ============================================================
+// SAVED ITINERARIES — explicitly save any assistant reply for later
+// ============================================================
+function addSaveBtn(el,rawContent){
+  if(el.querySelector('.save-itin-btn'))return;
+  const btn=document.createElement('button');
+  btn.className='save-itin-btn';
+  btn.textContent='☆ Save this';
+  btn.onclick=(e)=>{e.stopPropagation();saveItinerary(rawContent)};
+  el.appendChild(btn);
+}
+function saveItinerary(content){
+  const title=prompt('Name this itinerary (e.g. "Rome 3-Day Plan"):','');
+  if(title===null)return;
+  let list=[];
+  try{list=JSON.parse(ls('tripsave_itineraries')||'[]')}catch(e){}
+  list.unshift({id:'itin_'+Date.now(),title:title.trim()||'Untitled itinerary',content,savedAt:new Date().toISOString()});
+  ls('tripsave_itineraries',JSON.stringify(list));
+  toast('Saved to your itineraries');
+}
+function loadItineraries(){try{return JSON.parse(ls('tripsave_itineraries')||'[]')}catch(e){return[]}}
+function deleteItinerary(id){
+  let list=loadItineraries().filter(i=>i.id!==id);
+  ls('tripsave_itineraries',JSON.stringify(list));
+  renderItineraries();
+  toast('Deleted');
+}
+function renderItineraries(){
+  const list=loadItineraries();
+  const el=document.getElementById('itin-list');
+  if(!el)return;
+  if(!list.length){el.innerHTML='<p class="helper">No saved itineraries yet — tap "☆ Save this" under any chat reply to keep it here.</p>';return}
+  el.innerHTML=list.map(i=>`
+    <div class="itin-card" onclick="viewItinerary('${i.id}')">
+      <div class="itin-card-title">${esc(i.title)}</div>
+      <div class="itin-card-date">${new Date(i.savedAt).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}</div>
+    </div>
+  `).join('');
+}
+function viewItinerary(id){
+  const item=loadItineraries().find(i=>i.id===id);
+  if(!item)return;
+  document.getElementById('itin-view-title').textContent=item.title;
+  document.getElementById('itin-view-body').textContent=cleanMarkdown(item.content);
+  document.getElementById('itin-view-modal').style.display='flex';
+  document.getElementById('itin-view-modal').dataset.id=id;
+}
+function closeItinView(){document.getElementById('itin-view-modal').style.display='none'}
+function deleteCurrentItin(){
+  const id=document.getElementById('itin-view-modal').dataset.id;
+  closeItinView();
+  deleteItinerary(id);
+}
+function showItinList(){
+  renderItineraries();
+  document.getElementById('itin-list-modal').style.display='flex';
+}
+function closeItinList(){document.getElementById('itin-list-modal').style.display='none'}
 
 // ============================================================
 // SETTINGS
@@ -985,5 +1085,20 @@ function esc(s){
 }
 init();
 </script>
+<div id="itin-list-modal" class="itin-modal-overlay" style="display:none" onclick="if(event.target===this)closeItinList()">
+  <div class="itin-modal">
+    <div class="itin-modal-hdr"><h3>Saved Itineraries</h3><button onclick="closeItinList()" class="itin-x">✕</button></div>
+    <div id="itin-list" class="itin-modal-body"></div>
+  </div>
+</div>
+
+<div id="itin-view-modal" class="itin-modal-overlay" style="display:none" onclick="if(event.target===this)closeItinView()">
+  <div class="itin-modal">
+    <div class="itin-modal-hdr"><h3 id="itin-view-title">Itinerary</h3><button onclick="closeItinView()" class="itin-x">✕</button></div>
+    <div id="itin-view-body" class="itin-modal-body" style="white-space:pre-wrap"></div>
+    <button class="btn btn-s" style="margin:12px 16px" onclick="deleteCurrentItin()">Delete this itinerary</button>
+  </div>
+</div>
+
 </body>
 </html>
