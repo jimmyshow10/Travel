@@ -214,7 +214,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 </head>
 <body>
 
-<div class="version-badge">v19</div>
+<div class="version-badge">v20</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
@@ -378,6 +378,10 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
   <div class="hdr" style="flex-shrink:0">
     <h1 class="serif">Plan a Trip</h1>
     <p id="plan-sub">Browse what you've saved</p>
+    <div class="chips" style="padding:10px 0 0" id="plan-source-toggle">
+      <button class="chip active" id="plan-src-all" onclick="setPlanSource('all')">All Spots</button>
+      <button class="chip" id="plan-src-liked" onclick="setPlanSource('liked')">My Likes Only</button>
+    </div>
     <div style="display:flex;gap:8px;margin-top:10px">
       <button class="btn-s" onclick="showItinList()">📖 Saved Itineraries</button>
       <button class="btn-s" onclick="newChat()">+ New Chat</button>
@@ -1196,21 +1200,41 @@ function resetAdd(){
 // ============================================================
 // PLAN SCREEN — shows summary first, then chat
 // ============================================================
+let planSourceMode='all';
+
+function getPlanSpots(){
+  if(planSourceMode==='liked')return spots.filter(s=>s.swipes?.[myKey()]?.dir==='yes');
+  return spots;
+}
+
+function setPlanSource(mode){
+  if(mode===planSourceMode)return;
+  planSourceMode=mode;
+  document.getElementById('plan-src-all').classList.toggle('active',mode==='all');
+  document.getElementById('plan-src-liked').classList.toggle('active',mode==='liked');
+  newChat(); // fresh context so the assistant's overview matches the newly selected source
+}
+
 function initPlanScreen(){
   const ca=document.getElementById('chat-area');
+  const planSpots=getPlanSpots();
 
-  if(!spots.length){
+  if(!planSpots.length){
     ca.innerHTML='';chatHist=[];
-    addMsg("You haven't saved any spots yet. Head to the Save tab to start adding places from TikTok, then come back here to plan your trip.",'a');
     document.getElementById('plan-summary').style.display='none';
+    if(planSourceMode==='liked'){
+      addMsg("You haven't liked any spots yet. Head to the Swipe tab, swipe right on a few, then come back here.",'a');
+    }else{
+      addMsg("You haven't saved any spots yet. Head to the Save tab to start adding places from TikTok, then come back here to plan your trip.",'a');
+    }
     return;
   }
 
   // Build destination summary pills
-  const countries=[...new Set(spots.map(s=>s.country).filter(Boolean))].sort();
+  const countries=[...new Set(planSpots.map(s=>s.country).filter(Boolean))].sort();
   const destRow=document.getElementById('dest-row');
   destRow.innerHTML=countries.map(c=>{
-    const count=spots.filter(s=>s.country===c).length;
+    const count=planSpots.filter(s=>s.country===c).length;
     return`<div class="dest-pill" onclick="askAbout('${esc(c)}')">${c} (${count})</div>`;
   }).join('');
   document.getElementById('plan-summary').style.display='block';
@@ -1231,8 +1255,8 @@ function initPlanScreen(){
 
   // Build a natural overview message
   const byCountry={};
-  spots.forEach(s=>{const k=s.country||'Other';if(!byCountry[k])byCountry[k]=[];byCountry[k].push(s)});
-  let overview=`Here's everything you've saved so far:\n\n`;
+  planSpots.forEach(s=>{const k=s.country||'Other';if(!byCountry[k])byCountry[k]=[];byCountry[k].push(s)});
+  let overview=planSourceMode==='liked'?`Here's everything you've liked so far:\n\n`:`Here's everything you've saved so far:\n\n`;
   Object.entries(byCountry).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([country,ss])=>{
     const byType={};
     ss.forEach(s=>{const t=s.category||'other';if(!byType[t])byType[t]=0;byType[t]++});
@@ -1284,8 +1308,9 @@ async function sendChat(){
   addMsg(msg,'u');chatHist.push({role:'user',content:msg});saveChatHist();
   const tid='tmp-'+Date.now();addMsg('...','a',tid);
 
-  const ctx=spots.length
-    ?'Saved wishlist:\n'+spots.map(s=>`- ${s.name} (${s.city||'?'}, ${s.country||'?'}) [${s.category||'spot'}]${s.description?' — '+s.description:''}${s.hours?' Hours: '+s.hours:''}${s.notes?' Note: '+s.notes:''}`).join('\n')
+  const planSpots=getPlanSpots();
+  const ctx=planSpots.length
+    ?(planSourceMode==='liked'?'Liked spots (the user swiped right on these):\n':'Saved wishlist:\n')+planSpots.map(s=>`- ${s.name} (${s.city||'?'}, ${s.country||'?'}) [${s.category||'spot'}]${s.description?' — '+s.description:''}${s.hours?' Hours: '+s.hours:''}${s.notes?' Note: '+s.notes:''}`).join('\n')
     :'No saved spots.';
 
   const sys=`You are TripSave, a friendly travel planning assistant helping a couple plan trips based on their saved wishlist.
