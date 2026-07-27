@@ -210,11 +210,13 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 .swipe-done p{font-size:13px;color:var(--muted);margin-bottom:22px;}
 .swipe-yes-list{width:100%;max-height:260px;overflow-y:auto;text-align:left;margin-bottom:20px;}
 .swipe-yes-item{padding:9px 12px;background:var(--card);border:1px solid var(--border);border-radius:9px;font-size:14px;margin-bottom:7px;display:flex;align-items:center;gap:8px;}
+.like-unlike-btn{flex-shrink:0;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.like-unlike-btn:active{background:var(--cream-2);color:var(--rose-d)}
 </style>
 </head>
 <body>
 
-<div class="version-badge">v21</div>
+<div class="version-badge">v22</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
@@ -831,7 +833,27 @@ function yesCount(s){return s.swipes?Object.values(s.swipes).filter(v=>v.dir==='
 function likeRowHtml(s,showNames){
   const em=EMOJIS[s.category]||EMOJIS.default;
   const names=showNames&&s.swipes?Object.values(s.swipes).filter(v=>v.dir==='yes').map(v=>esc(v.name)).join(', '):'';
-  return `<div class="spot-row" onclick="openSpot('${s.id}')"><div class="spot-icon">${em}</div><div class="spot-info"><div class="spot-name">${esc(s.name)}</div><div class="spot-sub">${esc(s.city||'')}${s.city?' · ':''}${showNames?`Liked by ${names}`:esc(s.country||'')}</div></div></div>`;
+  return `<div class="spot-row" style="cursor:default">
+    <div class="spot-icon">${em}</div>
+    <div class="spot-info"><div class="spot-name">${esc(s.name)}</div><div class="spot-sub">${esc(s.city||'')}${s.city?' · ':''}${showNames?`Liked by ${names}`:esc(s.country||'')}</div></div>
+    <button class="like-unlike-btn" onclick="unlikeSpot('${s.id}')" title="Remove your like — lets you reswipe it">↺</button>
+  </div>`;
+}
+
+// Clears only YOUR swipe on this spot (not the spot itself, and not anyone else's answer),
+// so it falls back into the swipe deck next time you pick that country/city.
+function unlikeSpot(id){
+  const s=spots.find(x=>x.id===id);if(!s)return;
+  const k=myKey();
+  if(!confirm(`Remove your like on "${s.name}"? It'll show up again next time you swipe.`))return;
+  if(s.swipes)delete s.swipes[k];
+  if(db){
+    const update={};
+    update[`swipes.${k}`]=firebase.firestore.FieldValue.delete();
+    db.collection('tripsave_spots').doc(id).update(update).catch(e=>console.error(e));
+  }
+  renderLikes(document.getElementById('likes-mode-mine').classList.contains('active')?'mine':'group');
+  toast('Like removed — it\'ll show up next time you swipe');
 }
 
 function renderSpots(list){
