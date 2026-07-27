@@ -176,6 +176,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 .swipe-group-hdr:active{opacity:0.7}
 .swipe-group-name{font-size:15px;font-weight:600;color:var(--brown)}
 .swipe-group-count{font-size:12px;color:var(--muted);margin-top:1px}
+.swipe-reset-link{color:var(--rose-d);font-weight:600;text-decoration:underline;cursor:pointer;}
 .swipe-group-chev{color:var(--muted);transition:transform 0.2s;font-size:13px;}
 .swipe-group-chev.open{transform:rotate(90deg)}
 .swipe-cities{display:none;padding:0 15px 12px;border-top:1px solid var(--border);}
@@ -216,7 +217,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 </head>
 <body>
 
-<div class="version-badge">v22</div>
+<div class="version-badge">v23</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
@@ -569,11 +570,11 @@ function renderSwipePicker(){
       const checked=swipeSel[key]?'checked':'';
       const cList=list.filter(s=>s.city===city);
       const cNew=cList.filter(s=>!s.swipes||!s.swipes[k]).length;
-      return `<label class="swipe-city-row"><input type="checkbox" ${checked} onchange="toggleSwipeCity('${esc(country)}','${esc(city)}',this.checked)">${esc(city)} (${cList.length}${cNew?` · ${cNew} new`:''})</label>`;
+      return `<label class="swipe-city-row"><input type="checkbox" ${checked} onchange="toggleSwipeCity('${esc(country)}','${esc(city)}',this.checked)">${esc(city)} (${cList.length}${cNew?` · ${cNew} new`:''})${cNew<cList.length?` <span class="swipe-reset-link" onclick="event.preventDefault();event.stopPropagation();resetSwipes('${esc(country)}','${esc(city)}')">reswipe</span>`:''}</label>`;
     }).join('');
     return `<div class="swipe-group">
       <div class="swipe-group-hdr" onclick="toggleSwipeCountry('${esc(country)}')">
-        <div><div class="swipe-group-name">${esc(country)}</div><div class="swipe-group-count">${list.length} spot${list.length!==1?'s':''}${newCount?` · ${newCount} new`:' · all swiped'}</div></div>
+        <div><div class="swipe-group-name">${esc(country)}</div><div class="swipe-group-count">${list.length} spot${list.length!==1?'s':''}${newCount?` · ${newCount} new`:' · all swiped'}${newCount<list.length?` · <span class="swipe-reset-link" onclick="event.stopPropagation();resetSwipes('${esc(country)}')">reswipe all</span>`:''}</div></div>
         <div style="display:flex;align-items:center;gap:10px">
           <input type="checkbox" onclick="event.stopPropagation()" ${swipeSel[country]==='all'?'checked':''} onchange="toggleSwipeWholeCountry('${esc(country)}',this.checked)">
           <span class="swipe-group-chev ${isOpen?'open':''}">▸</span>
@@ -583,6 +584,28 @@ function renderSwipePicker(){
     </div>`;
   }).join('');
   updateSwipeStartBtn();
+}
+
+// Clears YOUR swipe (whether it was a yes or a pass) on every spot in a country, or just one city
+// within it, so they all fall back into the deck. Doesn't touch anyone else's swipes.
+async function resetSwipes(country,city){
+  const k=myKey();
+  const scope=city?`${city}, ${country}`:country;
+  const targets=spots.filter(s=>(s.country||'Other')===country&&(!city||s.city===city)&&s.swipes&&s.swipes[k]);
+  if(!targets.length)return;
+  if(!confirm(`Reswipe all ${targets.length} spot${targets.length!==1?'s':''} in ${scope}? This clears your likes and passes there so you can go through them again.`))return;
+  targets.forEach(s=>{if(s.swipes)delete s.swipes[k]});
+  if(db){
+    const batch=db.batch();
+    targets.forEach(s=>{
+      const ref=db.collection('tripsave_spots').doc(s.id);
+      const update={};update[`swipes.${k}`]=firebase.firestore.FieldValue.delete();
+      batch.update(ref,update);
+    });
+    try{await batch.commit()}catch(e){console.error(e)}
+  }
+  renderSwipePicker();
+  toast(`${scope} ready to reswipe`);
 }
 
 function toggleSwipeCountry(country){swipeOpen[country]=!swipeOpen[country];renderSwipePicker()}
