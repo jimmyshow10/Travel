@@ -214,7 +214,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 </head>
 <body>
 
-<div class="version-badge">v17</div>
+<div class="version-badge">v18</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
@@ -293,6 +293,18 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
       <button class="swipe-act-btn yes" onclick="swipeCard('yes')">♥</button>
     </div>
   </div>
+</div>
+
+<!-- LIKES / MATCHES -->
+<div id="screen-likes" class="screen">
+  <div class="hdr">
+    <h1 class="serif">Likes</h1>
+    <div class="chips" style="padding:10px 0 0">
+      <button class="chip active" id="likes-mode-mine" onclick="switchLikesMode('mine')">My Likes</button>
+      <button class="chip" id="likes-mode-group" onclick="switchLikesMode('group')">Group</button>
+    </div>
+  </div>
+  <div class="scroll-body" id="likes-body"></div>
 </div>
 
 <!-- ADD -->
@@ -514,8 +526,10 @@ async function loadSpots(){
   }catch(e){console.error(e);toast('Could not load spots')}
 }
 
-// ===== SWIPE (simple v1 — placeholder images, in-memory only, no Firestore writes yet) =====
-let swipeSel={},swipeOpen={},swipeDeck=[],swipeIdx=0,swipeResults={},swipeDrag=null;
+// ===== SWIPE (v2 — persisted to Firestore, resumes automatically, likes view) =====
+let swipeSel={},swipeOpen={},swipeDeck=[],swipeIdx=0,swipeDrag=null;
+
+function myKey(){return normalize(cfg.name||'you')}
 
 function renderSwipePicker(){
   const wrap=document.getElementById('swipe-picker-list');
@@ -523,19 +537,26 @@ function renderSwipePicker(){
   const byCountry={};
   spots.forEach(s=>{const c=s.country||'Other';(byCountry[c]=byCountry[c]||[]).push(s)});
   const countries=Object.keys(byCountry).sort();
-  wrap.innerHTML=countries.map(country=>{
+  const k=myKey();
+  wrap.innerHTML=`<div style="display:flex;gap:10px;margin-bottom:14px">
+      <button class="btn" style="flex:1;background:var(--card);border:1.5px solid var(--border);color:var(--brown);font-size:13px;padding:10px" onclick="openLikes('mine')">❤ My Likes</button>
+      <button class="btn" style="flex:1;background:var(--card);border:1.5px solid var(--border);color:var(--brown);font-size:13px;padding:10px" onclick="openLikes('group')">👥 Group</button>
+    </div>` +
+    countries.map(country=>{
     const list=byCountry[country];
     const cities=[...new Set(list.map(s=>s.city).filter(Boolean))].sort();
     const isOpen=!!swipeOpen[country];
+    const newCount=list.filter(s=>!s.swipes||!s.swipes[k]).length;
     const cityRows=cities.map(city=>{
       const key=country+'|'+city;
       const checked=swipeSel[key]?'checked':'';
-      const count=list.filter(s=>s.city===city).length;
-      return `<label class="swipe-city-row"><input type="checkbox" ${checked} onchange="toggleSwipeCity('${esc(country)}','${esc(city)}',this.checked)">${esc(city)} (${count})</label>`;
+      const cList=list.filter(s=>s.city===city);
+      const cNew=cList.filter(s=>!s.swipes||!s.swipes[k]).length;
+      return `<label class="swipe-city-row"><input type="checkbox" ${checked} onchange="toggleSwipeCity('${esc(country)}','${esc(city)}',this.checked)">${esc(city)} (${cList.length}${cNew?` · ${cNew} new`:''})</label>`;
     }).join('');
     return `<div class="swipe-group">
       <div class="swipe-group-hdr" onclick="toggleSwipeCountry('${esc(country)}')">
-        <div><div class="swipe-group-name">${esc(country)}</div><div class="swipe-group-count">${list.length} spot${list.length!==1?'s':''}</div></div>
+        <div><div class="swipe-group-name">${esc(country)}</div><div class="swipe-group-count">${list.length} spot${list.length!==1?'s':''}${newCount?` · ${newCount} new`:' · all swiped'}</div></div>
         <div style="display:flex;align-items:center;gap:10px">
           <input type="checkbox" onclick="event.stopPropagation()" ${swipeSel[country]==='all'?'checked':''} onchange="toggleSwipeWholeCountry('${esc(country)}',this.checked)">
           <span class="swipe-group-chev ${isOpen?'open':''}">▸</span>
@@ -566,16 +587,20 @@ function updateSwipeStartBtn(){
   const deck=buildSwipeDeck();
   const btn=document.getElementById('swipe-start-btn');
   btn.disabled=deck.length===0;
-  btn.textContent=deck.length?`Swipe ${deck.length} spot${deck.length!==1?'s':''}`:'Select spots to swipe';
+  btn.textContent=deck.length?`Swipe ${deck.length} new spot${deck.length!==1?'s':''}`:'No new spots to swipe here';
 }
 
+// Only includes spots the current person hasn't swiped yet — this is what makes it "resume"
+// automatically: leaving mid-deck and coming back just picks up where you left off.
 function buildSwipeDeck(){
   const selectedCountries=Object.keys(swipeSel).filter(k=>swipeSel[k]==='all');
   const selectedCityKeys=Object.keys(swipeSel).filter(k=>k.includes('|')&&swipeSel[k]);
+  const k=myKey();
   return spots.filter(s=>{
     const country=s.country||'Other';
-    if(selectedCountries.includes(country))return true;
-    return selectedCityKeys.includes(country+'|'+(s.city||''));
+    const inSelection=selectedCountries.includes(country)||selectedCityKeys.includes(country+'|'+(s.city||''));
+    if(!inSelection)return false;
+    return !s.swipes||!s.swipes[k];
   });
 }
 
@@ -584,10 +609,12 @@ function placeholderImg(spot){
   return `https://picsum.photos/seed/${seed}/600/800`;
 }
 
+function preloadImg(spot){if(spot)new Image().src=placeholderImg(spot)}
+
 function startSwipe(){
   swipeDeck=buildSwipeDeck();
   if(!swipeDeck.length)return;
-  swipeIdx=0;swipeResults={};
+  swipeIdx=0;
   go('swipe-stack');
   renderSwipeStack();
 }
@@ -597,13 +624,13 @@ function renderSwipeStack(){
   document.getElementById('swipe-progress').textContent=`${Math.min(swipeIdx+1,swipeDeck.length)} / ${swipeDeck.length}`;
   if(swipeIdx>=swipeDeck.length){showSwipeDone();return}
   document.getElementById('swipe-actions').style.display='flex';
-  // render current + next card (next behind, for stack depth feel)
   const cur=swipeDeck[swipeIdx],next=swipeDeck[swipeIdx+1];
   let h='';
   if(next)h+=cardHtml(next,false);
   h+=cardHtml(cur,true);
   wrap.innerHTML=h;
   attachSwipeDrag(document.getElementById('swipe-card-top'));
+  preloadImg(swipeDeck[swipeIdx+2]); // fetch the card after next ahead of time so it's cached before it's ever shown
 }
 
 function cardHtml(s,isTop){
@@ -635,7 +662,7 @@ function attachSwipeDrag(card){
   }
   function onUp(){
     if(!dragging)return;dragging=false;
-    card.style.transition='transform 0.25s ease';
+    card.style.transition='transform 0.2s ease';
     if(dx>90)finishSwipe('yes');
     else if(dx<-90)finishSwipe('no');
     else{card.style.transform='';tagYes.style.opacity=0;tagNo.style.opacity=0;}
@@ -652,21 +679,31 @@ function attachSwipeDrag(card){
 function swipeCard(dir){
   const card=document.getElementById('swipe-card-top');
   if(!card)return;
-  card.style.transition='transform 0.3s ease';
+  card.style.transition='transform 0.2s ease';
   card.style.transform=`translate(${dir==='yes'?600:-600}px,-40px) rotate(${dir==='yes'?25:-25}deg)`;
   finishSwipe(dir);
 }
 
 function finishSwipe(dir){
   const spot=swipeDeck[swipeIdx];
-  swipeResults[spot.id]={dir,by:cfg.name||'You'};
+  recordSwipe(spot,dir);
   swipeIdx++;
-  setTimeout(renderSwipeStack,180);
+  setTimeout(renderSwipeStack,90); // next card's image is already preloaded, so this can be short
+}
+
+// Writes directly onto the spot doc as a swipes map keyed by person — since you share one
+// Firestore dataset, both devices see each other's answers next time spots reload.
+function recordSwipe(spot,dir){
+  const k=myKey();
+  spot.swipes=spot.swipes||{};
+  spot.swipes[k]={dir,name:cfg.name||'You',at:Date.now()};
+  if(db)db.collection('tripsave_spots').doc(spot.id).set({swipes:spot.swipes},{merge:true}).catch(e=>console.error(e));
 }
 
 function showSwipeDone(){
   document.getElementById('swipe-actions').style.display='none';
-  const yesSpots=swipeDeck.filter(s=>swipeResults[s.id]?.dir==='yes');
+  const k=myKey();
+  const yesSpots=swipeDeck.filter(s=>s.swipes?.[k]?.dir==='yes');
   const wrap=document.getElementById('swipe-stack-wrap');
   wrap.innerHTML=`<div class="swipe-done">
     <div class="ei">✨</div>
@@ -675,6 +712,37 @@ function showSwipeDone(){
     <div class="swipe-yes-list">${yesSpots.map(s=>`<div class="swipe-yes-item">${EMOJIS[s.category]||EMOJIS.default} ${esc(s.name)}</div>`).join('')||'<div style="text-align:center;color:var(--muted);font-size:13px">No likes this round</div>'}</div>
     <button class="btn" style="background:var(--rose);color:white" onclick="go('swipe')">Done</button>
   </div>`;
+}
+
+// ===== LIKES / MATCHES VIEW =====
+function openLikes(mode){
+  document.getElementById('likes-mode-mine').classList.toggle('active',mode==='mine');
+  document.getElementById('likes-mode-group').classList.toggle('active',mode==='group');
+  renderLikes(mode);
+  go('likes');
+}
+
+function switchLikesMode(mode){openLikes(mode)}
+
+function renderLikes(mode){
+  const wrap=document.getElementById('likes-body');
+  const k=myKey();
+  if(mode==='mine'){
+    const mine=spots.filter(s=>s.swipes?.[k]?.dir==='yes');
+    wrap.innerHTML=mine.length?mine.map(s=>likeRowHtml(s)).join(''):`<div class="empty"><div class="ei">💭</div><h3>No likes yet</h3><p>Swipe right on some spots first.</p></div>`;
+  }else{
+    // Group leaderboard: every spot anyone has swiped on, sorted by yes-count, showing who liked it
+    const swiped=spots.filter(s=>s.swipes&&Object.keys(s.swipes).length);
+    const ranked=swiped.map(s=>({s,yesCount:Object.values(s.swipes).filter(v=>v.dir==='yes').length}))
+      .filter(r=>r.yesCount>0).sort((a,b)=>b.yesCount-a.yesCount);
+    wrap.innerHTML=ranked.length?ranked.map(r=>likeRowHtml(r.s,true)).join(''):`<div class="empty"><div class="ei">💭</div><h3>No likes yet</h3><p>Nobody's swiped anything in yet.</p></div>`;
+  }
+}
+
+function likeRowHtml(s,showNames){
+  const em=EMOJIS[s.category]||EMOJIS.default;
+  const names=showNames&&s.swipes?Object.values(s.swipes).filter(v=>v.dir==='yes').map(v=>esc(v.name)).join(', '):'';
+  return `<div class="spot-row" onclick="openSpot('${s.id}')"><div class="spot-icon">${em}</div><div class="spot-info"><div class="spot-name">${esc(s.name)}</div><div class="spot-sub">${esc(s.city||'')}${s.city?' · ':''}${showNames?`Liked by ${names}`:esc(s.country||'')}</div></div></div>`;
 }
 
 function renderSpots(list){
