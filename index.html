@@ -214,7 +214,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 </head>
 <body>
 
-<div class="version-badge">v18</div>
+<div class="version-badge">v19</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
@@ -727,17 +727,32 @@ function switchLikesMode(mode){openLikes(mode)}
 function renderLikes(mode){
   const wrap=document.getElementById('likes-body');
   const k=myKey();
+  let list;
   if(mode==='mine'){
-    const mine=spots.filter(s=>s.swipes?.[k]?.dir==='yes');
-    wrap.innerHTML=mine.length?mine.map(s=>likeRowHtml(s)).join(''):`<div class="empty"><div class="ei">💭</div><h3>No likes yet</h3><p>Swipe right on some spots first.</p></div>`;
+    list=spots.filter(s=>s.swipes?.[k]?.dir==='yes');
   }else{
-    // Group leaderboard: every spot anyone has swiped on, sorted by yes-count, showing who liked it
     const swiped=spots.filter(s=>s.swipes&&Object.keys(s.swipes).length);
-    const ranked=swiped.map(s=>({s,yesCount:Object.values(s.swipes).filter(v=>v.dir==='yes').length}))
-      .filter(r=>r.yesCount>0).sort((a,b)=>b.yesCount-a.yesCount);
-    wrap.innerHTML=ranked.length?ranked.map(r=>likeRowHtml(r.s,true)).join(''):`<div class="empty"><div class="ei">💭</div><h3>No likes yet</h3><p>Nobody's swiped anything in yet.</p></div>`;
+    list=swiped.filter(s=>Object.values(s.swipes).some(v=>v.dir==='yes'));
   }
+  if(!list.length){
+    wrap.innerHTML=`<div class="empty"><div class="ei">💭</div><h3>No likes yet</h3><p>${mode==='mine'?'Swipe right on some spots first.':"Nobody's swiped anything in yet."}</p></div>`;
+    return;
+  }
+  const byCountry={};
+  list.forEach(s=>{const c=s.country||'Other';(byCountry[c]=byCountry[c]||[]).push(s)});
+  // Countries with more liked spots float to the top; within a country, group liked ones sort by like-count in Group mode
+  const countries=Object.keys(byCountry).sort((a,b)=>byCountry[b].length-byCountry[a].length);
+  let h='';
+  countries.forEach(country=>{
+    let group=byCountry[country];
+    if(mode==='group')group=group.slice().sort((a,b)=>yesCount(b)-yesCount(a));
+    h+=`<div class="country-lbl">${esc(country)} · ${group.length}</div>`;
+    group.forEach(s=>h+=likeRowHtml(s,mode==='group'));
+  });
+  wrap.innerHTML=h;
 }
+
+function yesCount(s){return s.swipes?Object.values(s.swipes).filter(v=>v.dir==='yes').length:0}
 
 function likeRowHtml(s,showNames){
   const em=EMOJIS[s.category]||EMOJIS.default;
