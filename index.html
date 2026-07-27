@@ -168,11 +168,53 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 .itin-card-date{font-size:12px;color:var(--muted);margin-top:2px;}
 .toast.show{opacity:1}
 .version-badge{position:fixed;top:6px;right:10px;font-size:10px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:2px 7px;z-index:400;font-family:'Inter',sans-serif;pointer-events:none;}
+
+/* SWIPE */
+.swipe-picker-body{flex:1;overflow-y:auto;padding:16px 20px 24px;-webkit-overflow-scrolling:touch;}
+.swipe-group{margin-bottom:10px;background:var(--card);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;}
+.swipe-group-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 15px;cursor:pointer;}
+.swipe-group-hdr:active{opacity:0.7}
+.swipe-group-name{font-size:15px;font-weight:600;color:var(--brown)}
+.swipe-group-count{font-size:12px;color:var(--muted);margin-top:1px}
+.swipe-group-chev{color:var(--muted);transition:transform 0.2s;font-size:13px;}
+.swipe-group-chev.open{transform:rotate(90deg)}
+.swipe-cities{display:none;padding:0 15px 12px;border-top:1px solid var(--border);}
+.swipe-cities.open{display:block}
+.swipe-city-row{display:flex;align-items:center;gap:9px;padding:8px 0;font-size:14px;color:var(--brown-2);}
+.swipe-city-row input{width:17px;height:17px;accent-color:var(--rose);}
+.swipe-start-bar{flex-shrink:0;padding:14px 20px;border-top:1px solid var(--border);background:var(--card);}
+
+.swipe-stack-screen{display:flex;flex-direction:column;flex:1;overflow:hidden;background:var(--cream);}
+.swipe-top-bar{flex-shrink:0;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;}
+.swipe-back{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px 6px;}
+.swipe-progress{font-size:12px;color:var(--muted);font-weight:600;}
+.swipe-stack-wrap{flex:1;position:relative;padding:6px 20px 10px;display:flex;align-items:center;justify-content:center;}
+.swipe-card{position:absolute;width:calc(100% - 40px);max-width:390px;height:100%;max-height:520px;background:var(--card);border-radius:20px;box-shadow:0 8px 24px rgba(44,26,14,0.18);overflow:hidden;display:flex;flex-direction:column;user-select:none;touch-action:none;}
+.swipe-card-img{flex:1;background-size:cover;background-position:center;position:relative;min-height:0;}
+.swipe-card-tag{position:absolute;top:16px;font-size:22px;font-weight:700;padding:6px 14px;border-radius:8px;border:3px solid;text-transform:uppercase;letter-spacing:0.05em;opacity:0;transition:opacity 0.1s;}
+.swipe-card-tag.yes{right:16px;color:#3E9C6F;border-color:#3E9C6F;transform:rotate(8deg);}
+.swipe-card-tag.no{left:16px;color:var(--rose-d);border-color:var(--rose-d);transform:rotate(-8deg);}
+.swipe-card-info{flex-shrink:0;padding:14px 16px 16px;background:var(--card);}
+.swipe-card-name{font-size:19px;font-weight:600;color:var(--brown);font-family:'Playfair Display',serif;}
+.swipe-card-loc{font-size:13px;color:var(--muted);margin-top:2px;}
+.swipe-card-desc{font-size:13px;color:var(--brown-2);margin-top:7px;line-height:1.45;}
+.swipe-actions{flex-shrink:0;display:flex;justify-content:center;gap:22px;padding:16px 20px 22px;}
+.swipe-act-btn{width:58px;height:58px;border-radius:50%;border:none;background:var(--card);box-shadow:0 3px 10px rgba(44,26,14,0.15);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;}
+.swipe-act-btn:active{transform:scale(0.92)}
+.swipe-act-btn.no{color:var(--rose-d)}
+.swipe-act-btn.yes{color:#3E9C6F}
+
+.swipe-done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center;}
+.swipe-done .ei{font-size:44px;margin-bottom:12px;}
+.swipe-done h3{font-family:'Playfair Display',serif;font-size:21px;margin-bottom:6px;}
+.swipe-done p{font-size:13px;color:var(--muted);margin-bottom:22px;}
+.swipe-yes-list{width:100%;max-height:260px;overflow-y:auto;text-align:left;margin-bottom:20px;}
+.swipe-yes-item{padding:9px 12px;background:var(--card);border:1px solid var(--border);border-radius:9px;font-size:14px;margin-bottom:7px;display:flex;align-items:center;gap:8px;}
 </style>
 </head>
 <body>
 
-<div class="version-badge">v16</div>
+<div class="version-badge">v17</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
@@ -222,6 +264,34 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
   <div class="chips" id="chips"><button class="chip active" onclick="setFilter('all',this)">All</button></div>
   <div class="scroll-body" id="spots-list">
     <div class="empty"><div class="ei">🌍</div><h3>No spots yet</h3><p>Tap <strong>Save</strong> below to add your first place from TikTok.</p></div>
+  </div>
+</div>
+
+<!-- SWIPE PICKER -->
+<div id="screen-swipe" class="screen">
+  <div class="hdr">
+    <h1 class="serif">Swipe</h1>
+    <p>Pick a country, or just the cities you want</p>
+  </div>
+  <div class="swipe-picker-body" id="swipe-picker-list"></div>
+  <div class="swipe-start-bar">
+    <button class="btn" style="background:var(--rose);color:white" id="swipe-start-btn" onclick="startSwipe()" disabled>Select spots to swipe</button>
+  </div>
+</div>
+
+<!-- SWIPE STACK -->
+<div id="screen-swipe-stack" class="screen">
+  <div class="swipe-stack-screen">
+    <div class="swipe-top-bar">
+      <button class="swipe-back" onclick="go('swipe')">← Back</button>
+      <div class="swipe-progress" id="swipe-progress"></div>
+      <div style="width:40px"></div>
+    </div>
+    <div class="swipe-stack-wrap" id="swipe-stack-wrap"></div>
+    <div class="swipe-actions" id="swipe-actions">
+      <button class="swipe-act-btn no" onclick="swipeCard('no')">✕</button>
+      <button class="swipe-act-btn yes" onclick="swipeCard('yes')">♥</button>
+    </div>
   </div>
 </div>
 
@@ -365,6 +435,10 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
     Save
   </button>
+  <button class="nav-btn" onclick="go('swipe',this)" id="nb-swipe">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+    Swipe
+  </button>
   <button class="nav-btn" onclick="go('plan',this)" id="nb-plan">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
     Plan
@@ -427,6 +501,7 @@ function go(id,btn){
   const nb=btn||document.getElementById('nb-'+id);if(nb)nb.classList.add('active');
   if(id==='library')document.getElementById('lib-sub').textContent=spots.length?`${spots.length} spot${spots.length!==1?'s':''} saved`:'Your saved travel spots';
   if(id==='plan')initPlanScreen();
+  if(id==='swipe')renderSwipePicker();
   if(id!=='add')resetAdd();
 }
 
@@ -437,6 +512,169 @@ async function loadSpots(){
     spots=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderSpots(spots);buildChips();
   }catch(e){console.error(e);toast('Could not load spots')}
+}
+
+// ===== SWIPE (simple v1 — placeholder images, in-memory only, no Firestore writes yet) =====
+let swipeSel={},swipeOpen={},swipeDeck=[],swipeIdx=0,swipeResults={},swipeDrag=null;
+
+function renderSwipePicker(){
+  const wrap=document.getElementById('swipe-picker-list');
+  if(!spots.length){wrap.innerHTML='<div class="empty"><div class="ei">🌍</div><h3>No spots yet</h3><p>Save some spots first, then come back to swipe.</p></div>';return}
+  const byCountry={};
+  spots.forEach(s=>{const c=s.country||'Other';(byCountry[c]=byCountry[c]||[]).push(s)});
+  const countries=Object.keys(byCountry).sort();
+  wrap.innerHTML=countries.map(country=>{
+    const list=byCountry[country];
+    const cities=[...new Set(list.map(s=>s.city).filter(Boolean))].sort();
+    const isOpen=!!swipeOpen[country];
+    const cityRows=cities.map(city=>{
+      const key=country+'|'+city;
+      const checked=swipeSel[key]?'checked':'';
+      const count=list.filter(s=>s.city===city).length;
+      return `<label class="swipe-city-row"><input type="checkbox" ${checked} onchange="toggleSwipeCity('${esc(country)}','${esc(city)}',this.checked)">${esc(city)} (${count})</label>`;
+    }).join('');
+    return `<div class="swipe-group">
+      <div class="swipe-group-hdr" onclick="toggleSwipeCountry('${esc(country)}')">
+        <div><div class="swipe-group-name">${esc(country)}</div><div class="swipe-group-count">${list.length} spot${list.length!==1?'s':''}</div></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="checkbox" onclick="event.stopPropagation()" ${swipeSel[country]==='all'?'checked':''} onchange="toggleSwipeWholeCountry('${esc(country)}',this.checked)">
+          <span class="swipe-group-chev ${isOpen?'open':''}">▸</span>
+        </div>
+      </div>
+      ${cities.length?`<div class="swipe-cities ${isOpen?'open':''}">${cityRows}</div>`:''}
+    </div>`;
+  }).join('');
+  updateSwipeStartBtn();
+}
+
+function toggleSwipeCountry(country){swipeOpen[country]=!swipeOpen[country];renderSwipePicker()}
+
+function toggleSwipeWholeCountry(country,checked){
+  swipeSel[country]=checked?'all':false;
+  Object.keys(swipeSel).forEach(k=>{if(k.startsWith(country+'|'))delete swipeSel[k]});
+  renderSwipePicker();
+}
+
+function toggleSwipeCity(country,city,checked){
+  const key=country+'|'+city;
+  if(checked){swipeSel[key]=true;if(swipeSel[country]==='all')swipeSel[country]=false;}
+  else{delete swipeSel[key]}
+  renderSwipePicker();
+}
+
+function updateSwipeStartBtn(){
+  const deck=buildSwipeDeck();
+  const btn=document.getElementById('swipe-start-btn');
+  btn.disabled=deck.length===0;
+  btn.textContent=deck.length?`Swipe ${deck.length} spot${deck.length!==1?'s':''}`:'Select spots to swipe';
+}
+
+function buildSwipeDeck(){
+  const selectedCountries=Object.keys(swipeSel).filter(k=>swipeSel[k]==='all');
+  const selectedCityKeys=Object.keys(swipeSel).filter(k=>k.includes('|')&&swipeSel[k]);
+  return spots.filter(s=>{
+    const country=s.country||'Other';
+    if(selectedCountries.includes(country))return true;
+    return selectedCityKeys.includes(country+'|'+(s.city||''));
+  });
+}
+
+function placeholderImg(spot){
+  const seed=encodeURIComponent(normalize(spot.name)+normalize(spot.city||''));
+  return `https://picsum.photos/seed/${seed}/600/800`;
+}
+
+function startSwipe(){
+  swipeDeck=buildSwipeDeck();
+  if(!swipeDeck.length)return;
+  swipeIdx=0;swipeResults={};
+  go('swipe-stack');
+  renderSwipeStack();
+}
+
+function renderSwipeStack(){
+  const wrap=document.getElementById('swipe-stack-wrap');
+  document.getElementById('swipe-progress').textContent=`${Math.min(swipeIdx+1,swipeDeck.length)} / ${swipeDeck.length}`;
+  if(swipeIdx>=swipeDeck.length){showSwipeDone();return}
+  document.getElementById('swipe-actions').style.display='flex';
+  // render current + next card (next behind, for stack depth feel)
+  const cur=swipeDeck[swipeIdx],next=swipeDeck[swipeIdx+1];
+  let h='';
+  if(next)h+=cardHtml(next,false);
+  h+=cardHtml(cur,true);
+  wrap.innerHTML=h;
+  attachSwipeDrag(document.getElementById('swipe-card-top'));
+}
+
+function cardHtml(s,isTop){
+  const em=EMOJIS[s.category]||EMOJIS.default;
+  return `<div class="swipe-card" id="${isTop?'swipe-card-top':''}" style="${isTop?'':'transform:scale(0.96) translateY(8px);opacity:0.7;'}">
+    <div class="swipe-card-img" style="background-image:url('${placeholderImg(s)}')">
+      <div class="swipe-card-tag yes" id="tag-yes">LIKE</div>
+      <div class="swipe-card-tag no" id="tag-no">PASS</div>
+    </div>
+    <div class="swipe-card-info">
+      <div class="swipe-card-name">${em} ${esc(s.name)}</div>
+      <div class="swipe-card-loc">${esc(s.city||'')}${s.city&&s.country?', ':''}${esc(s.country||'')}</div>
+      ${s.description?`<div class="swipe-card-desc">${esc(s.description)}</div>`:''}
+    </div>
+  </div>`;
+}
+
+function attachSwipeDrag(card){
+  if(!card)return;
+  let startX=0,startY=0,dx=0,dragging=false;
+  const tagYes=document.getElementById('tag-yes'),tagNo=document.getElementById('tag-no');
+  function onDown(x,y){dragging=true;startX=x;startY=y;card.style.transition='none'}
+  function onMove(x,y){
+    if(!dragging)return;
+    dx=x-startX;const dy=(y-startY)*0.4;
+    card.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/18}deg)`;
+    const p=Math.min(Math.abs(dx)/100,1);
+    tagYes.style.opacity=dx>0?p:0;tagNo.style.opacity=dx<0?p:0;
+  }
+  function onUp(){
+    if(!dragging)return;dragging=false;
+    card.style.transition='transform 0.25s ease';
+    if(dx>90)finishSwipe('yes');
+    else if(dx<-90)finishSwipe('no');
+    else{card.style.transform='';tagYes.style.opacity=0;tagNo.style.opacity=0;}
+    dx=0;
+  }
+  card.onmousedown=e=>onDown(e.clientX,e.clientY);
+  window.addEventListener('mousemove',e=>onMove(e.clientX,e.clientY));
+  window.addEventListener('mouseup',onUp);
+  card.ontouchstart=e=>onDown(e.touches[0].clientX,e.touches[0].clientY);
+  card.ontouchmove=e=>onMove(e.touches[0].clientX,e.touches[0].clientY);
+  card.ontouchend=onUp;
+}
+
+function swipeCard(dir){
+  const card=document.getElementById('swipe-card-top');
+  if(!card)return;
+  card.style.transition='transform 0.3s ease';
+  card.style.transform=`translate(${dir==='yes'?600:-600}px,-40px) rotate(${dir==='yes'?25:-25}deg)`;
+  finishSwipe(dir);
+}
+
+function finishSwipe(dir){
+  const spot=swipeDeck[swipeIdx];
+  swipeResults[spot.id]={dir,by:cfg.name||'You'};
+  swipeIdx++;
+  setTimeout(renderSwipeStack,180);
+}
+
+function showSwipeDone(){
+  document.getElementById('swipe-actions').style.display='none';
+  const yesSpots=swipeDeck.filter(s=>swipeResults[s.id]?.dir==='yes');
+  const wrap=document.getElementById('swipe-stack-wrap');
+  wrap.innerHTML=`<div class="swipe-done">
+    <div class="ei">✨</div>
+    <h3>All done!</h3>
+    <p>You liked ${yesSpots.length} of ${swipeDeck.length} spots</p>
+    <div class="swipe-yes-list">${yesSpots.map(s=>`<div class="swipe-yes-item">${EMOJIS[s.category]||EMOJIS.default} ${esc(s.name)}</div>`).join('')||'<div style="text-align:center;color:var(--muted);font-size:13px">No likes this round</div>'}</div>
+    <button class="btn" style="background:var(--rose);color:white" onclick="go('swipe')">Done</button>
+  </div>`;
 }
 
 function renderSpots(list){
