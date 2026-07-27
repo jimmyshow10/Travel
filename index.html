@@ -214,7 +214,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
 </head>
 <body>
 
-<div class="version-badge">v20</div>
+<div class="version-badge">v21</div>
 
 <!-- SETUP -->
 <div id="screen-setup" class="screen active">
@@ -237,6 +237,11 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
       <label>AssemblyAI API Key</label>
       <input type="password" id="s-aai" placeholder="Your AssemblyAI key" autocomplete="off">
       <p class="helper">From assemblyai.com — for videos where someone is talking. Free tier works fine.</p>
+    </div>
+    <div class="field">
+      <label>Google Places API Key (optional)</label>
+      <input type="password" id="s-gp" placeholder="AIza..." autocomplete="off">
+      <p class="helper">Enables real photos in the Swipe tab. Needs "Places API (New)" enabled, with your key restricted to your app's domain. Leave blank to use placeholder photos instead.</p>
     </div>
     <div class="setup-divider">Firebase<span>Keeps the wishlist shared between both of you</span></div>
     <div class="field">
@@ -430,6 +435,11 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--brown);m
       <div class="field"><label>API Key</label><input type="password" id="st-aai" autocomplete="off"></div>
     </div>
     <div class="settings-section">
+      <h3>Google Places</h3>
+      <div class="field"><label>API Key (optional)</label><input type="password" id="st-gp" autocomplete="off"></div>
+      <p class="helper" style="padding:0 2px">Enables real photos in Swipe. Needs "Places API (New)" enabled. Leave blank for placeholder photos.</p>
+    </div>
+    <div class="settings-section">
       <h3>Firebase</h3>
       <div class="field"><label>API Key</label><input type="password" id="st-fbk" autocomplete="off"></div>
       <div class="field"><label>Project ID</label><input type="text" id="st-fbp"></div>
@@ -479,7 +489,7 @@ function ls(k,v){if(v===undefined)return localStorage.getItem(k);localStorage.se
 function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
 
 function init(){
-  cfg={ant:ls('ts_ant')||'',name:ls('ts_name')||'',aai:ls('ts_aai')||'',fbk:ls('ts_fbk')||'',fbp:ls('ts_fbp')||''};
+  cfg={ant:ls('ts_ant')||'',name:ls('ts_name')||'',aai:ls('ts_aai')||'',fbk:ls('ts_fbk')||'',fbp:ls('ts_fbp')||'',gp:ls('ts_gp')||''};
   if(!cfg.ant||!cfg.fbk||!cfg.fbp){show('setup');return}
   initFB();showMain();
 }
@@ -497,9 +507,10 @@ function saveSetup(){
   const ai=document.getElementById('s-aai').value.trim();
   const fk=document.getElementById('s-fbk').value.trim();
   const fp=document.getElementById('s-fbp').value.trim();
+  const gp=document.getElementById('s-gp').value.trim();
   if(!n||!a||!fk||!fp){toast('Please fill in all required fields');return}
-  ls('ts_name',n);ls('ts_ant',a);ls('ts_aai',ai);ls('ts_fbk',fk);ls('ts_fbp',fp);
-  cfg={name:n,ant:a,aai:ai,fbk:fk,fbp:fp};
+  ls('ts_name',n);ls('ts_ant',a);ls('ts_aai',ai);ls('ts_fbk',fk);ls('ts_fbp',fp);ls('ts_gp',gp);
+  cfg={name:n,ant:a,aai:ai,fbk:fk,fbp:fp,gp};
   initFB();showMain();
 }
 
@@ -613,13 +624,72 @@ function placeholderImg(spot){
   return `https://picsum.photos/seed/${seed}/600/800`;
 }
 
-function preloadImg(spot){if(spot)new Image().src=placeholderImg(spot)}
+// Real photo, if we have one cached; otherwise placeholder. Never triggers a network fetch itself —
+// fetching only happens explicitly in prefetchDeckPhotos(), so no cost until the Swipe tab is actually used.
+function spotImg(spot){
+  if(spot.photoRefs&&spot.photoRefs.length&&cfg.gp)return placesMediaUrl(spot.photoRefs[0]);
+  return placeholderImg(spot);
+}
 
-function startSwipe(){
+function placesMediaUrl(photoRef){
+  return `https://places.googleapis.com/v1/${photoRef}/media?maxWidthPx=700&key=${cfg.gp}`;
+}
+
+// One-time-per-spot lookup: Text Search (New) to find the place, pulling just its photo references.
+// Result is cached onto the spot doc (photoRefs + photoFetchedAt) so this never re-runs for a spot
+// that's already been searched — even an empty result is cached, so a spot with no photo match
+// doesn't get re-queried every time someone opens the swipe tab.
+async function fetchSpotPhotos(spot){
+  if(spot.photoRefs)return; // already cached (possibly empty array — still cached)
+  if(!cfg.gp)return; // no key configured, just use placeholders silently
+  try{
+    const q=[spot.name,spot.city,spot.country].filter(Boolean).join(', ');
+    const res=await fetch('https://places.googleapis.com/v1/places:searchText',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Goog-Api-Key':cfg.gp,'X-Goog-FieldMask':'places.photos'},
+      body:JSON.stringify({textQuery:q,maxResultCount:1})
+    });
+    const data=await res.json();
+    const photos=data?.places?.[0]?.photos||[];
+    spot.photoRefs=photos.slice(0,3).map(p=>p.name);
+    spot.photoFetchedAt=Date.now();
+  }catch(e){
+    console.error('Places photo fetch failed for',spot.name,e);
+    spot.photoRefs=[]; // cache the miss too, so we don't hammer a broken lookup repeatedly
+    spot.photoFetchedAt=Date.now();
+  }
+  if(db){
+    db.collection('tripsave_spots').doc(spot.id).set({photoRefs:spot.photoRefs,photoFetchedAt:spot.photoFetchedAt},{merge:true}).catch(e=>console.error(e));
+  }
+}
+
+// Fetches photos for every spot in the deck that doesn't already have a cached result.
+// Runs a few at a time (not all 100 at once) to stay well under Places API rate limits.
+async function prefetchDeckPhotos(deck){
+  const todo=deck.filter(s=>!s.photoRefs);
+  if(!todo.length||!cfg.gp)return;
+  const barWrap=document.getElementById('swipe-stack-wrap');
+  const CONCURRENCY=4;
+  let done=0;
+  barWrap.innerHTML=`<div class="swipe-done"><div class="ei">📸</div><h3>Fetching photos…</h3><p id="swipe-fetch-progress">0 / ${todo.length}</p></div>`;
+  for(let i=0;i<todo.length;i+=CONCURRENCY){
+    const batch=todo.slice(i,i+CONCURRENCY);
+    await Promise.all(batch.map(s=>fetchSpotPhotos(s)));
+    done+=batch.length;
+    const p=document.getElementById('swipe-fetch-progress');
+    if(p)p.textContent=`${Math.min(done,todo.length)} / ${todo.length}`;
+  }
+}
+
+function preloadImg(spot){if(spot)new Image().src=spotImg(spot)}
+
+async function startSwipe(){
   swipeDeck=buildSwipeDeck();
   if(!swipeDeck.length)return;
   swipeIdx=0;
   go('swipe-stack');
+  document.getElementById('swipe-actions').style.display='none';
+  await prefetchDeckPhotos(swipeDeck);
   renderSwipeStack();
 }
 
@@ -640,7 +710,7 @@ function renderSwipeStack(){
 function cardHtml(s,isTop){
   const em=EMOJIS[s.category]||EMOJIS.default;
   return `<div class="swipe-card" id="${isTop?'swipe-card-top':''}" style="${isTop?'':'transform:scale(0.96) translateY(8px);opacity:0.7;'}">
-    <div class="swipe-card-img" style="background-image:url('${placeholderImg(s)}')">
+    <div class="swipe-card-img" style="background-image:url('${spotImg(s)}')">
       <div class="swipe-card-tag yes" id="tag-yes">LIKE</div>
       <div class="swipe-card-tag no" id="tag-no">PASS</div>
     </div>
@@ -1509,7 +1579,7 @@ function closeItinList(){document.getElementById('itin-list-modal').style.displa
 function populateSettings(){
   document.getElementById('st-name').value=cfg.name;document.getElementById('st-ant').value=cfg.ant;
   document.getElementById('st-aai').value=cfg.aai;document.getElementById('st-fbk').value=cfg.fbk;
-  document.getElementById('st-fbp').value=cfg.fbp;
+  document.getElementById('st-fbp').value=cfg.fbp;document.getElementById('st-gp').value=cfg.gp||'';
   renderUsage();
   populateExportFilter();
 }
@@ -1556,9 +1626,9 @@ function exportCSV(){
 function saveSettings(){
   const n=document.getElementById('st-name').value.trim();const a=document.getElementById('st-ant').value.trim();
   const ai=document.getElementById('st-aai').value.trim();const fk=document.getElementById('st-fbk').value.trim();
-  const fp=document.getElementById('st-fbp').value.trim();
-  ls('ts_name',n);ls('ts_ant',a);ls('ts_aai',ai);ls('ts_fbk',fk);ls('ts_fbp',fp);
-  cfg={name:n,ant:a,aai:ai,fbk:fk,fbp:fp};toast('Settings saved');
+  const fp=document.getElementById('st-fbp').value.trim();const gp=document.getElementById('st-gp').value.trim();
+  ls('ts_name',n);ls('ts_ant',a);ls('ts_aai',ai);ls('ts_fbk',fk);ls('ts_fbp',fp);ls('ts_gp',gp);
+  cfg={name:n,ant:a,aai:ai,fbk:fk,fbp:fp,gp};toast('Settings saved');
 }
 function clearData(){
   if(confirm('Sign out and clear settings? Shared spots stay in Firebase.')){localStorage.clear();location.reload()}
